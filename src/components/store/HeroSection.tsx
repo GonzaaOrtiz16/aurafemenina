@@ -7,7 +7,7 @@ export default function HeroSection() {
     <section className="relative h-[70vh] min-h-[500px] overflow-hidden">
       <img
         src={heroBanner}
-        alt="AURELIA - Moda Femenina"
+        alt="AURA FEMENINA - Moda Femenina"
         className="absolute inset-0 h-full w-full object-cover"
         loading="eager"
       />
