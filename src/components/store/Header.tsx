@@ -27,7 +27,7 @@ export default function Header() {
           <SheetContent side="left" className="w-72 p-0">
             <div className="flex items-center justify-between border-b border-border px-4 py-4">
               <Link to="/" className="font-display text-xl font-semibold tracking-wider" onClick={() => setOpen(false)}>
-                AURELIA
+                AURA FEMENINA
               </Link>
             </div>
             <nav className="flex flex-col p-4 gap-1">
@@ -47,7 +47,7 @@ export default function Header() {
 
         {/* Logo */}
         <Link to="/" className="font-display text-2xl font-semibold tracking-[0.2em]">
-          AURELIA
+          AURA FEMENINA
         </Link>
 
         {/* Desktop nav */}
