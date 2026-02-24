@@ -1,17 +1,15 @@
-import { useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import ProductCard from "@/components/store/ProductCard";
-import { products, categories } from "@/data/products";
+import { useProducts, useCategories } from "@/hooks/useProducts";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get("categoria") || "";
 
-  const filtered = useMemo(() => {
-    if (!activeCategory) return products;
-    return products.filter((p) => p.categorySlug === activeCategory);
-  }, [activeCategory]);
+  const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
+  const { data: categories = [] } = useCategories();
 
   const handleCategory = (slug: string) => {
     if (slug === activeCategory) {
@@ -59,12 +57,20 @@ export default function Products() {
 
         {/* Product grid */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {filtered.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {isLoading
+            ? Array.from({ length: 8 }).map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="aspect-[3/4] rounded-sm" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))
+            : products.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
 
-        {filtered.length === 0 && (
+        {!isLoading && products.length === 0 && (
           <p className="text-center text-muted-foreground font-body py-12">
             No hay productos en esta categoría.
           </p>
