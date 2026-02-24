@@ -47,8 +47,23 @@ export default function ProductDetail() {
 
   if (!product) return null;
 
-  // CORRECCIÓN DE TALLES: Extrae las claves (ej: "M") del objeto de stock
-  const availableSizes = product.sizes ? Object.keys(product.sizes) : [];
+  // --- LÓGICA DE RESCATE PARA TALLES (Para que no aparezca "0") ---
+  const availableSizes = (() => {
+    if (!product.sizes) return [];
+    
+    // Si es un objeto tipo {"M": 10}, extraemos las letras "M", "L", etc.
+    if (typeof product.sizes === 'object' && !Array.isArray(product.sizes)) {
+      return Object.keys(product.sizes).filter(key => {
+        const stock = product.sizes[key];
+        return stock !== 0 && stock !== "0"; // Filtramos si el stock es cero real
+      });
+    }
+    
+    // Si ya es una lista ["M", "L"], la usamos directamente
+    if (Array.isArray(product.sizes)) return product.sizes;
+    
+    return [];
+  })();
 
   const handleAddToCart = () => {
     if (availableSizes.length > 0 && !selectedSize) {
@@ -63,7 +78,6 @@ export default function ProductDetail() {
       return;
     }
 
-    // Enviamos el nombre del color (ej: "Blanco") para el mensaje de WhatsApp
     addItem(product, selectedSize, colorObj?.nombre || "");
     
     toast({
@@ -109,19 +123,15 @@ export default function ProductDetail() {
 
           {/* INFORMACIÓN */}
           <div className="flex flex-col">
-            <h1 className="font-display text-3xl md:text-4xl font-semibold mb-4 uppercase italic tracking-tighter">
+            <h1 className="font-display text-3xl md:text-4xl font-semibold mb-2 uppercase italic tracking-tighter">
               {product.name}
             </h1>
             <p className="font-body text-2xl font-bold mb-6">
               {formatPrice(product.price)}
             </p>
 
-            <p className="font-body text-sm text-muted-foreground leading-relaxed mb-8">
-              {product.description}
-            </p>
-
-            {/* SELECTOR DE COLORES */}
-            {product.colores && product.colores.length > 0 && (
+            {/* SELECTOR DE COLORES CORREGIDO */}
+            {product.colores && product.colores.length > 0 ? (
               <div className="mb-8">
                 <p className="text-xs uppercase tracking-widest font-semibold mb-3">
                   Color: <span className="font-normal text-muted-foreground">
@@ -132,9 +142,10 @@ export default function ProductDetail() {
                   {product.colores.map((color) => (
                     <button
                       key={color.hex}
+                      type="button"
                       onClick={() => setSelectedColorHex(color.hex)}
                       className={`w-10 h-10 rounded-full border-2 transition-all flex items-center justify-center ${
-                        selectedColorHex === color.hex ? "border-black scale-110" : "border-transparent hover:border-gray-300"
+                        selectedColorHex === color.hex ? "border-black scale-110 shadow-sm" : "border-transparent hover:border-gray-300"
                       }`}
                       style={{ padding: '2px' }}
                     >
@@ -146,9 +157,9 @@ export default function ProductDetail() {
                   ))}
                 </div>
               </div>
-            )}
+            ) : null}
 
-            {/* SELECTOR DE TALLES */}
+            {/* SELECTOR DE TALLES CORREGIDO (Ignora el "0") */}
             {availableSizes.length > 0 && (
               <div className="mb-8">
                 <p className="text-xs uppercase tracking-widest font-semibold mb-3">Talle</p>
@@ -156,6 +167,7 @@ export default function ProductDetail() {
                   {availableSizes.map((size) => (
                     <button
                       key={size}
+                      type="button"
                       onClick={() => setSelectedSize(size)}
                       className={`min-w-[54px] h-11 border transition-all font-body text-sm ${
                         selectedSize === size ? "bg-black text-white border-black" : "bg-white hover:border-black"
@@ -177,7 +189,7 @@ export default function ProductDetail() {
             </Button>
             
             <p className="text-[10px] text-center text-muted-foreground mt-6 uppercase tracking-widest">
-              Aura Femenina — Envíos a todo el país
+              Aura Femenina — WhatsApp: 5491134944228
             </p>
           </div>
         </div>
