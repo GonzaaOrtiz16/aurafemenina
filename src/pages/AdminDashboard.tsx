@@ -180,7 +180,7 @@ export default function AdminDashboard() {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
-          <h1 className="font-display text-xl font-semibold tracking-wider">AURELIA — Admin</h1>
+          <h1 className="font-display text-xl font-semibold tracking-wider">AURA FEMENINA — Admin</h1>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 font-body text-xs">
             <LogOut className="h-4 w-4" /> Salir
           </Button>
