@@ -1,4 +1,4 @@
-import { ShippingResult } from "@/types/product";
+import { ShippingResult, CartItem } from "@/types/product";
 
 export function calcularEnvio(codigoPostal: string): ShippingResult | null {
   const cp = parseInt(codigoPostal, 10);
@@ -31,4 +31,30 @@ export function formatPrice(price: number): string {
     currency: "ARS",
     minimumFractionDigits: 0,
   }).format(price);
+}
+
+export function generarMensajeWhatsApp(
+  items: CartItem[], 
+  total: number, 
+  envio: ShippingResult | null, 
+  datos: { nombre: string; direccion: string; cp: string }
+): string {
+  const nroTelefono = "5491134944228"; // Tu número real configurado
+  
+  let mensaje = `*NUEVO PEDIDO - AURA FEMENINA*%0A%0A`;
+  mensaje += `*Cliente:* ${datos.nombre}%0A`;
+  mensaje += `*Dirección:* ${datos.direccion} (CP: ${datos.cp})%0A%0A`;
+  
+  mensaje += `*PRODUCTOS:*%0A`;
+  items.forEach((item) => {
+    // Si item.color es el código Hex, podrías enviarlo o dejarlo como nombre
+    const colorInfo = item.color ? ` - Color: ${item.color}` : "";
+    mensaje += `- ${item.product.name} (Talle: ${item.size}${colorInfo}) x${item.quantity}%0A`;
+  });
+
+  mensaje += `%0A*Envío:* ${envio ? envio.method : "A convenir"}`;
+  mensaje += `%0A*TOTAL A PAGAR:* ${formatPrice(total + (envio?.cost || 0))}%0A%0A`;
+  mensaje += `_Pedido realizado desde la web oficial_`;
+
+  return `https://wa.me/${nroTelefono}?text=${mensaje}`;
 }
