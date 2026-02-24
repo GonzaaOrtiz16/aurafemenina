@@ -8,6 +8,8 @@ export interface Product {
   categorySlug: string;
   sizes: string[];
   images: string[];
+  // Agregamos la definición de colores aquí
+  colores?: { nombre: string, hex: string }[]; 
   description: string;
   featured?: boolean;
   isNew?: boolean;
@@ -16,6 +18,7 @@ export interface Product {
 export interface CartItem {
   product: Product;
   size: string;
+  color?: string; // Para que el carrito guarde el color elegido
   quantity: number;
 }
 
