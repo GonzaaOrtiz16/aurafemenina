@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/shipping";
-import { Plus, Pencil, Trash2, LogOut, X, Save } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, X, Save, Palette, Image as ImageIcon } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -31,6 +31,7 @@ interface DbProduct {
   category_id: string | null;
   sizes: Record<string, number>;
   images: string[];
+  colores?: { nombre: string; hex: string }[];
   featured: boolean;
 }
 
@@ -51,7 +52,6 @@ export default function AdminDashboard() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbProduct | null>(null);
 
-  // Form state
   const [form, setForm] = useState({
     name: "",
     slug: "",
@@ -60,6 +60,7 @@ export default function AdminDashboard() {
     category_id: "",
     featured: false,
     images: [""],
+    colores: [] as { nombre: string; hex: string }[],
     sizes: {} as Record<string, number>,
   });
 
@@ -95,7 +96,7 @@ export default function AdminDashboard() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", description: "", price: "", category_id: "", featured: false, images: [""], sizes: {} });
+    setForm({ name: "", slug: "", description: "", price: "", category_id: "", featured: false, images: [""], colores: [], sizes: {} });
     setDialogOpen(true);
   };
 
@@ -108,7 +109,8 @@ export default function AdminDashboard() {
       price: String(p.price),
       category_id: p.category_id || "",
       featured: p.featured,
-      images: p.images.length > 0 ? p.images : [""],
+      images: p.images && p.images.length > 0 ? p.images : [""],
+      colores: p.colores || [],
       sizes: p.sizes || {},
     });
     setDialogOpen(true);
@@ -123,7 +125,8 @@ export default function AdminDashboard() {
       price: Number(form.price),
       category_id: form.category_id || null,
       featured: form.featured,
-      images: form.images.filter(Boolean),
+      images: form.images.filter(img => img.trim() !== ""),
+      colores: form.colores,
       sizes: form.sizes,
     };
 
@@ -138,6 +141,19 @@ export default function AdminDashboard() {
     }
     setDialogOpen(false);
     fetchData();
+  };
+
+  const addImageField = () => setForm({ ...form, images: [...form.images, ""] });
+  
+  const removeImageField = (index: number) => {
+    const newImages = form.images.filter((_, i) => i !== index);
+    setForm({ ...form, images: newImages.length > 0 ? newImages : [""] });
+  };
+
+  const addColorField = () => setForm({ ...form, colores: [...form.colores, { nombre: "", hex: "#000000" }] });
+
+  const removeColorField = (index: number) => {
+    setForm({ ...form, colores: form.colores.filter((_, i) => i !== index) });
   };
 
   const handleDelete = async (id: string) => {
@@ -177,7 +193,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between">
           <h1 className="font-display text-xl font-semibold tracking-wider">AURA FEMENINA — Admin</h1>
@@ -214,7 +229,7 @@ export default function AdminDashboard() {
                   <tr key={p.id} className="border-b border-border last:border-0">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
-                        {p.images[0] && (
+                        {p.images && p.images[0] && (
                           <img src={p.images[0]} alt="" className="h-10 w-8 object-cover rounded-sm bg-secondary flex-shrink-0" />
                         )}
                         <span className="font-medium truncate max-w-[200px]">{p.name}</span>
@@ -241,7 +256,6 @@ export default function AdminDashboard() {
         )}
       </div>
 
-      {/* Product Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
           <DialogHeader>
@@ -249,44 +263,99 @@ export default function AdminDashboard() {
               {editing ? "Editar producto" : "Nuevo producto"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <label className="font-body text-sm font-medium">Nombre</label>
-              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} className="font-body" />
-            </div>
-            <div>
-              <label className="font-body text-sm font-medium">Slug</label>
-              <Input value={form.slug} onChange={(e) => setForm({ ...form, slug: e.target.value })} className="font-body" />
-            </div>
-            <div>
-              <label className="font-body text-sm font-medium">Descripción</label>
-              <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} className="font-body" rows={3} />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-6">
+            <div className="space-y-4">
               <div>
-                <label className="font-body text-sm font-medium">Precio</label>
-                <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="font-body" />
+                <label className="font-body text-sm font-medium">Nombre</label>
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} className="font-body" />
               </div>
-              <div>
-                <label className="font-body text-sm font-medium">Categoría</label>
-                <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
-                  <SelectTrigger className="font-body"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
-                  <SelectContent>
-                    {categories.map((c) => (
-                      <SelectItem key={c.id} value={c.id} className="font-body">{c.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="font-body text-sm font-medium">Precio</label>
+                  <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="font-body" />
+                </div>
+                <div>
+                  <label className="font-body text-sm font-medium">Categoría</label>
+                  <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
+                    <SelectTrigger className="font-body"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectContent>
+                      {categories.map((c) => (
+                        <SelectItem key={c.id} value={c.id} className="font-body">{c.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div className="flex items-center gap-3">
+                <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
+                <label className="font-body text-sm">Producto destacado</label>
               </div>
             </div>
-            <div className="flex items-center gap-3">
-              <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
-              <label className="font-body text-sm">Producto destacado</label>
+
+            {/* SECCIÓN DE IMÁGENES */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <label className="font-body text-sm font-medium flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" /> Imágenes (URLs)
+                </label>
+                <Button type="button" variant="outline" size="sm" onClick={addImageField}>+ Añadir</Button>
+              </div>
+              {form.images.map((img, idx) => (
+                <div key={idx} className="flex gap-2">
+                  <Input 
+                    value={img} 
+                    onChange={(e) => {
+                      const newImgs = [...form.images];
+                      newImgs[idx] = e.target.value;
+                      setForm({ ...form, images: newImgs });
+                    }} 
+                    placeholder="https://..." 
+                    className="font-body flex-1" 
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => removeImageField(idx)} className="text-destructive">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
-            <div>
-              <label className="font-body text-sm font-medium">URL de imagen</label>
-              <Input value={form.images[0] || ""} onChange={(e) => setForm({ ...form, images: [e.target.value] })} placeholder="/images/products/..." className="font-body" />
+
+            {/* SECCIÓN DE COLORES */}
+            <div className="space-y-3 border-t pt-4">
+              <div className="flex items-center justify-between">
+                <label className="font-body text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" /> Variantes de Color
+                </label>
+                <Button type="button" variant="outline" size="sm" onClick={addColorField}>+ Añadir</Button>
+              </div>
+              {form.colores.map((color, idx) => (
+                <div key={idx} className="flex gap-2 items-center bg-secondary/30 p-2 rounded-sm">
+                  <Input 
+                    placeholder="Nombre (Blanco)" 
+                    value={color.nombre}
+                    onChange={(e) => {
+                      const newCols = [...form.colores];
+                      newCols[idx].nombre = e.target.value;
+                      setForm({ ...form, colores: newCols });
+                    }}
+                    className="h-8 text-xs"
+                  />
+                  <Input 
+                    type="color" 
+                    value={color.hex}
+                    onChange={(e) => {
+                      const newCols = [...form.colores];
+                      newCols[idx].hex = e.target.value;
+                      setForm({ ...form, colores: newCols });
+                    }}
+                    className="w-12 h-8 p-1 cursor-pointer"
+                  />
+                  <Button variant="ghost" size="icon" onClick={() => removeColorField(idx)} className="h-8 w-8 text-destructive">
+                    <X className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
             </div>
+
             <div>
               <label className="font-body text-sm font-medium mb-2 block">Talles y stock</label>
               <div className="flex flex-wrap gap-2 mb-3">
@@ -320,7 +389,7 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-            <Button onClick={handleSave} className="w-full gap-2 font-body">
+            <Button onClick={handleSave} className="w-full gap-2 font-body bg-black hover:bg-black/90 text-white">
               <Save className="h-4 w-4" /> {editing ? "Guardar cambios" : "Crear producto"}
             </Button>
           </div>
