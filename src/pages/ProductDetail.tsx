@@ -1,20 +1,41 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/store/Layout";
-import { getProductBySlug } from "@/data/products";
+import { useProductBySlug } from "@/hooks/useProducts";
 import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/shipping";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ShoppingBag, ChevronLeft, Check } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
-  const product = getProductBySlug(slug || "");
+  const { data: product, isLoading } = useProductBySlug(slug || "");
   const { addItem } = useCart();
   const { toast } = useToast();
   const [selectedSize, setSelectedSize] = useState("");
+
+  if (isLoading) {
+    return (
+      <Layout>
+        <div className="container py-6">
+          <Skeleton className="h-5 w-40 mb-6" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <Skeleton className="aspect-[3/4] rounded-sm" />
+            <div className="space-y-4">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-10 w-3/4" />
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-20 w-full" />
+              <Skeleton className="h-12 w-full" />
+            </div>
+          </div>
+        </div>
+      </Layout>
+    );
+  }
 
   if (!product) {
     return (

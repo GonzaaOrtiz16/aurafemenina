@@ -1,12 +1,14 @@
 import Layout from "@/components/store/Layout";
 import HeroSection from "@/components/store/HeroSection";
 import ProductCard from "@/components/store/ProductCard";
-import { getFeaturedProducts, categories } from "@/data/products";
+import { useFeaturedProducts, useCategories } from "@/hooks/useProducts";
 import { Link } from "react-router-dom";
-
-const featured = getFeaturedProducts();
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Index() {
+  const { data: featured = [], isLoading: loadingProducts } = useFeaturedProducts();
+  const { data: categories = [], isLoading: loadingCats } = useCategories();
+
   return (
     <Layout>
       <HeroSection />
@@ -17,17 +19,21 @@ export default function Index() {
           Categorías
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-          {categories.map((cat) => (
-            <Link
-              key={cat.slug}
-              to={`/productos?categoria=${cat.slug}`}
-              className="group flex items-center justify-center rounded-sm border border-border bg-card p-6 text-center transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary"
-            >
-              <span className="font-body text-sm font-medium uppercase tracking-wider">
-                {cat.name}
-              </span>
-            </Link>
-          ))}
+          {loadingCats
+            ? Array.from({ length: 6 }).map((_, i) => (
+                <Skeleton key={i} className="h-16 rounded-sm" />
+              ))
+            : categories.map((cat) => (
+                <Link
+                  key={cat.slug}
+                  to={`/productos?categoria=${cat.slug}`}
+                  className="group flex items-center justify-center rounded-sm border border-border bg-card p-6 text-center transition-all hover:bg-primary hover:text-primary-foreground hover:border-primary"
+                >
+                  <span className="font-body text-sm font-medium uppercase tracking-wider">
+                    {cat.name}
+                  </span>
+                </Link>
+              ))}
         </div>
       </section>
 
@@ -37,9 +43,17 @@ export default function Index() {
           Destacados
         </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
-          {featured.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
+          {loadingProducts
+            ? Array.from({ length: 4 }).map((_, i) => (
+                <div key={i} className="space-y-3">
+                  <Skeleton className="aspect-[3/4] rounded-sm" />
+                  <Skeleton className="h-4 w-3/4" />
+                  <Skeleton className="h-4 w-1/2" />
+                </div>
+              ))
+            : featured.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
         </div>
         <div className="mt-10 text-center">
           <Link
