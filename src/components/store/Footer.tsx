@@ -8,7 +8,7 @@ export default function Footer() {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* Brand */}
           <div>
-            <h3 className="font-display text-2xl font-semibold tracking-[0.2em] mb-4">AURELIA</h3>
+            <h3 className="font-display text-2xl font-semibold tracking-[0.2em] mb-4">AURA FEMENINA</h3>
             <p className="text-sm text-muted-foreground leading-relaxed">
               Moda femenina con estilo y calidad. Envíos a todo el país.
             </p>
