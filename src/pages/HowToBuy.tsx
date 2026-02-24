@@ -32,7 +32,7 @@ export default function HowToBuy() {
           ¿Cómo comprar?
         </h1>
         <p className="font-body text-center text-muted-foreground mb-12 max-w-lg mx-auto">
-          Comprar en AURELIA es fácil y rápido. Seguí estos simples pasos:
+          Comprar en AURA FEMENINA es fácil y rápido. Seguí estos simples pasos:
         </p>
         <div className="space-y-8">
           {steps.map((step, i) => (
