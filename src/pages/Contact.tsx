@@ -14,7 +14,7 @@ export default function Contact() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <a
-            href="https://wa.me/5491112345678"
+            href="https://wa.me/5491134944228"
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center gap-4 border border-border rounded-sm p-5 hover:bg-secondary transition-colors"
@@ -22,18 +22,18 @@ export default function Contact() {
             <MessageCircle className="h-6 w-6 text-whatsapp flex-shrink-0" />
             <div>
               <p className="font-body text-sm font-medium">WhatsApp</p>
-              <p className="font-body text-xs text-muted-foreground">+54 9 11 1234-5678</p>
+              <p className="font-body text-xs text-muted-foreground">+54 9 11 3494-4228</p>
             </div>
           </a>
 
           <a
-            href="mailto:hola@aurelia.com.ar"
+            href="mailto:orianaevelyn09@gmail.com"
             className="flex items-center gap-4 border border-border rounded-sm p-5 hover:bg-secondary transition-colors"
           >
             <Mail className="h-6 w-6 text-accent flex-shrink-0" />
             <div>
               <p className="font-body text-sm font-medium">Email</p>
-              <p className="font-body text-xs text-muted-foreground">hola@aurelia.com.ar</p>
+              <p className="font-body text-xs text-muted-foreground">orianaevelyn09@gmail.com</p>
             </div>
           </a>
 
@@ -46,7 +46,7 @@ export default function Contact() {
             <Instagram className="h-6 w-6 flex-shrink-0" />
             <div>
               <p className="font-body text-sm font-medium">Instagram</p>
-              <p className="font-body text-xs text-muted-foreground">@aurelia.moda</p>
+              <p className="font-body text-xs text-muted-foreground">@aurafemenina.oficial</p>
             </div>
           </a>
 
