@@ -41,7 +41,7 @@ export default function AdminLogin() {
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
       <div className="w-full max-w-sm space-y-6">
         <div className="text-center">
-          <h1 className="font-display text-3xl font-semibold tracking-[0.2em]">AURELIA</h1>
+          <h1 className="font-display text-3xl font-semibold tracking-[0.2em]">AURA FEMENINA</h1>
           <p className="font-body text-sm text-muted-foreground mt-2">Panel de administración</p>
         </div>
         <form onSubmit={handleLogin} className="space-y-4">
