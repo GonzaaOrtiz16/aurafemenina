@@ -29,21 +29,21 @@ export default function Footer() {
           <div>
             <h4 className="font-body text-sm font-semibold uppercase tracking-wider mb-4">Contacto</h4>
             <div className="flex flex-col gap-3 text-sm text-muted-foreground">
-              <a href="https://wa.me/5491112345678" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
-                <Phone className="h-4 w-4" /> +54 9 11 1234-5678
+              <a href="https://wa.me/5491134944228" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
+                <Phone className="h-4 w-4" /> +54 9 11 3494-4228
               </a>
-              <a href="mailto:hola@aurelia.com.ar" className="flex items-center gap-2 hover:text-foreground transition-colors">
-                <Mail className="h-4 w-4" /> hola@aurelia.com.ar
+              <a href="mailto:orianaevelyn09@gmail.com" className="flex items-center gap-2 hover:text-foreground transition-colors">
+                <Mail className="h-4 w-4" /> orianaevelyn09@gmail.com
               </a>
-              <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
-                <Instagram className="h-4 w-4" /> @aurelia.moda
+              <a href="https://www.instagram.com/aurafemenina.oficial/?hl=es" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
+                <Instagram className="h-4 w-4" /> @aurafemenina.oficial
               </a>
             </div>
           </div>
         </div>
 
         <div className="mt-10 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} AURELIA. Todos los derechos reservados.
+          © {new Date().getFullYear()} AURA FEMENINA. Todos los derechos reservados.
         </div>
       </div>
     </footer>
