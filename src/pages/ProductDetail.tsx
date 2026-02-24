@@ -30,24 +30,29 @@ export default function ProductDetail() {
   if (isLoading) return <Layout><div className="container py-10"><Skeleton className="h-[400px]" /></div></Layout>;
   if (!product) return null;
 
-  // LÓGICA DE TALLES (YA FUNCIONA)
-  const availableSizes = product.sizes ? Object.keys(product.sizes) : [];
+  // --- SOLUCIÓN TALLES ---
+  const availableSizes = (() => {
+    if (!product.sizes) return [];
+    if (typeof product.sizes === 'object' && !Array.isArray(product.sizes)) {
+      return Object.keys(product.sizes).filter(s => s !== "0"); // Filtra el "0" si aparece como llave
+    }
+    return Array.isArray(product.sizes) ? product.sizes : [];
+  })();
 
-  // --- NUEVA LÓGICA PARA PROCESAR EL COLOR DESDE SQL ---
-  const getColores = () => {
+  // --- SOLUCIÓN COLORES (PROCESA EL TEXTO DE SQL) ---
+  const listaColores = (() => {
     if (!product.colores) return [];
-    // Si viene como string de SQL, lo convertimos a objeto real
     if (typeof product.colores === 'string') {
       try {
+        // Convierte el texto [{"hex":"#ffffff"}] en un objeto real
         return JSON.parse(product.colores);
       } catch (e) {
+        console.error("Error al leer colores:", e);
         return [];
       }
     }
-    return product.colores;
-  };
-
-  const listaColores = getColores();
+    return Array.isArray(product.colores) ? product.colores : [];
+  })();
 
   const handleAddToCart = () => {
     if (availableSizes.length > 0 && !selectedSize) {
@@ -94,7 +99,7 @@ export default function ProductDetail() {
             <h1 className="font-display text-3xl font-semibold mb-2 uppercase italic tracking-tighter">{product.name}</h1>
             <p className="font-body text-2xl font-bold mb-6">{formatPrice(product.price)}</p>
 
-            {/* SELECTOR DE COLORES (PROCESANDO SQL) */}
+            {/* SELECTOR DE COLORES (DIBUJA LOS CÍRCULOS) */}
             {listaColores.length > 0 && (
               <div className="mb-8">
                 <p className="text-xs uppercase tracking-widest font-semibold mb-3">
@@ -108,7 +113,7 @@ export default function ProductDetail() {
                       key={color.hex}
                       onClick={() => setSelectedColorHex(color.hex)}
                       className={`w-10 h-10 rounded-full border-2 transition-all ${
-                        selectedColorHex === color.hex ? "border-black scale-110 shadow-sm" : "border-transparent hover:border-gray-200"
+                        selectedColorHex === color.hex ? "border-black scale-110 shadow-sm" : "border-gray-200"
                       }`}
                       style={{ padding: '2px' }}
                     >
@@ -123,7 +128,7 @@ export default function ProductDetail() {
             <div className="mb-8">
               <p className="text-xs uppercase tracking-widest font-semibold mb-3">Talle</p>
               <div className="flex flex-wrap gap-2">
-                {availableSizes.map((size) => (
+                {availableSizes.map((size: string) => (
                   <button
                     key={size}
                     onClick={() => setSelectedSize(size)}
@@ -140,12 +145,13 @@ export default function ProductDetail() {
             <Button onClick={handleAddToCart} size="lg" className="w-full bg-black text-white h-14 uppercase tracking-widest rounded-none">
               <ShoppingBag className="h-5 w-5 mr-2" /> Agregar al carrito
             </Button>
-            <p className="text-[10px] text-center text-muted-foreground mt-6 uppercase tracking-widest">Aura Femenina — {WHATSAPP_NUMBER}</p>
+            
+            <p className="text-[10px] text-center text-muted-foreground mt-6 uppercase tracking-widest">
+               AURA FEMENINA — WHATSAPP: 5491134944228
+            </p>
           </div>
         </div>
       </div>
     </Layout>
   );
 }
-
-const WHATSAPP_NUMBER = "5491134944228";
