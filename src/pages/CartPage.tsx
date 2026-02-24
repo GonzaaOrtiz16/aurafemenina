@@ -9,8 +9,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Minus, Plus, Trash2, MessageCircle } from "lucide-react";
 
-const WHATSAPP_NUMBER = "5491112345678";
-const STORE_NAME = "AURELIA";
+const WHATSAPP_NUMBER = "5491134944228";
+const STORE_NAME = "AURA FEMENINA";
 
 export default function CartPage() {
   const { items, removeItem, updateQuantity, subtotal, clearCart } = useCart();
