@@ -39,22 +39,23 @@ export function generarMensajeWhatsApp(
   envio: ShippingResult | null, 
   datos: { nombre: string; direccion: string; cp: string }
 ): string {
-  const nroTelefono = "5491134944228"; // Tu número real configurado
+  // Tu número de WhatsApp real integrado
+  const nroTelefono = "5491134944228"; 
   
   let mensaje = `*NUEVO PEDIDO - AURA FEMENINA*%0A%0A`;
   mensaje += `*Cliente:* ${datos.nombre}%0A`;
-  mensaje += `*Dirección:* ${datos.direccion} (CP: ${datos.cp})%0A%0A`;
+  mensaje += `*Dirección:* ${datos.direccion} (CP: ${datos.cp})%0A`;
+  mensaje += `*Email:* orianaevelyn09@gmail.com%0A%0A`; // Agregué tu mail como referencia de la tienda si querés
   
   mensaje += `*PRODUCTOS:*%0A`;
   items.forEach((item) => {
-    // Si item.color es el código Hex, podrías enviarlo o dejarlo como nombre
     const colorInfo = item.color ? ` - Color: ${item.color}` : "";
     mensaje += `- ${item.product.name} (Talle: ${item.size}${colorInfo}) x${item.quantity}%0A`;
   });
 
   mensaje += `%0A*Envío:* ${envio ? envio.method : "A convenir"}`;
   mensaje += `%0A*TOTAL A PAGAR:* ${formatPrice(total + (envio?.cost || 0))}%0A%0A`;
-  mensaje += `_Pedido realizado desde la web oficial_`;
+  mensaje += `_Instagram: @aurafemenina.oficial_`; // Tu Instagram en el pie del mensaje
 
   return `https://wa.me/${nroTelefono}?text=${mensaje}`;
 }
