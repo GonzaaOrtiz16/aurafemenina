@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/shipping";
-import { Plus, Pencil, Trash2, LogOut, X, Save, Palette, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, LogOut, X, Save, Palette, Image as ImageIcon, Loader2, Upload } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -51,6 +51,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbProduct | null>(null);
+  const [uploading, setUploading] = useState(false); // Estado para la carga de archivos
 
   const [form, setForm] = useState({
     name: "",
@@ -59,7 +60,7 @@ export default function AdminDashboard() {
     price: "",
     category_id: "",
     featured: false,
-    images: [""],
+    images: [] as string[], // Empezamos con array vacío
     colores: [] as { nombre: string; hex: string }[],
     sizes: {} as Record<string, number>,
   });
@@ -96,7 +97,7 @@ export default function AdminDashboard() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", description: "", price: "", category_id: "", featured: false, images: [""], colores: [], sizes: {} });
+    setForm({ name: "", slug: "", description: "", price: "", category_id: "", featured: false, images: [], colores: [], sizes: {} });
     setDialogOpen(true);
   };
 
@@ -109,11 +110,48 @@ export default function AdminDashboard() {
       price: String(p.price),
       category_id: p.category_id || "",
       featured: p.featured,
-      images: p.images && p.images.length > 0 ? p.images : [""],
+      images: p.images || [],
       colores: p.colores || [],
       sizes: p.sizes || {},
     });
     setDialogOpen(true);
+  };
+
+  // --- NUEVA FUNCIÓN PARA SUBIR ARCHIVOS ---
+  const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${Date.now()}-${Math.floor(Math.random() * 1000)}.${fileExt}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('product-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      const { data: urlData } = supabase.storage
+        .from('product-images')
+        .getPublicUrl(fileName);
+
+      setForm((prev) => ({
+        ...prev,
+        images: [...prev.images, urlData.publicUrl]
+      }));
+
+      toast({ title: "Imagen subida", description: "La foto se agregó correctamente." });
+    } catch (error: any) {
+      toast({ title: "Error al subir", description: error.message, variant: "destructive" });
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const removeImage = (index: number) => {
+    setForm({ ...form, images: form.images.filter((_, i) => i !== index) });
   };
 
   const handleSave = async () => {
@@ -125,7 +163,7 @@ export default function AdminDashboard() {
       price: Number(form.price),
       category_id: form.category_id || null,
       featured: form.featured,
-      images: form.images.filter(img => img.trim() !== ""),
+      images: form.images,
       colores: form.colores,
       sizes: form.sizes,
     };
@@ -143,18 +181,8 @@ export default function AdminDashboard() {
     fetchData();
   };
 
-  const addImageField = () => setForm({ ...form, images: [...form.images, ""] });
-  
-  const removeImageField = (index: number) => {
-    const newImages = form.images.filter((_, i) => i !== index);
-    setForm({ ...form, images: newImages.length > 0 ? newImages : [""] });
-  };
-
   const addColorField = () => setForm({ ...form, colores: [...form.colores, { nombre: "", hex: "#000000" }] });
-
-  const removeColorField = (index: number) => {
-    setForm({ ...form, colores: form.colores.filter((_, i) => i !== index) });
-  };
+  const removeColorField = (index: number) => setForm({ ...form, colores: form.colores.filter((_, i) => i !== index) });
 
   const handleDelete = async (id: string) => {
     if (!confirm("¿Eliminar este producto?")) return;
@@ -172,40 +200,33 @@ export default function AdminDashboard() {
   const toggleSize = (size: string) => {
     setForm((prev) => {
       const newSizes = { ...prev.sizes };
-      if (size in newSizes) {
-        delete newSizes[size];
-      } else {
-        newSizes[size] = 10;
-      }
+      if (size in newSizes) { delete newSizes[size]; } 
+      else { newSizes[size] = 10; }
       return { ...prev, sizes: newSizes };
     });
   };
 
   const updateStock = (size: string, stock: number) => {
-    setForm((prev) => ({
-      ...prev,
-      sizes: { ...prev.sizes, [size]: stock },
-    }));
+    setForm((prev) => ({ ...prev, sizes: { ...prev.sizes, [size]: stock } }));
   };
 
-  const getCategoryName = (id: string | null) =>
-    categories.find((c) => c.id === id)?.name || "-";
+  const getCategoryName = (id: string | null) => categories.find((c) => c.id === id)?.name || "-";
 
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
-        <div className="container flex h-14 items-center justify-between">
-          <h1 className="font-display text-xl font-semibold tracking-wider">AURA FEMENINA — Admin</h1>
+        <div className="container flex h-14 items-center justify-between px-4">
+          <h1 className="font-display text-lg md:text-xl font-semibold tracking-wider">AURA FEMENINA — Admin</h1>
           <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 font-body text-xs">
             <LogOut className="h-4 w-4" /> Salir
           </Button>
         </div>
       </header>
 
-      <div className="container py-6">
+      <div className="container py-6 px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-2xl font-semibold">Productos</h2>
-          <Button onClick={openNew} className="gap-2 font-body text-sm">
+          <Button onClick={openNew} className="gap-2 font-body text-sm bg-black text-white">
             <Plus className="h-4 w-4" /> Nuevo producto
           </Button>
         </div>
@@ -226,13 +247,13 @@ export default function AdminDashboard() {
               </thead>
               <tbody>
                 {products.map((p) => (
-                  <tr key={p.id} className="border-b border-border last:border-0">
+                  <tr key={p.id} className="border-b border-border last:border-0 hover:bg-secondary/20">
                     <td className="p-3">
                       <div className="flex items-center gap-3">
                         {p.images && p.images[0] && (
                           <img src={p.images[0]} alt="" className="h-10 w-8 object-cover rounded-sm bg-secondary flex-shrink-0" />
                         )}
-                        <span className="font-medium truncate max-w-[200px]">{p.name}</span>
+                        <span className="font-medium truncate max-w-[150px] md:max-w-[200px]">{p.name}</span>
                       </div>
                     </td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{getCategoryName(p.category_id)}</td>
@@ -257,7 +278,7 @@ export default function AdminDashboard() {
       </div>
 
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] rounded-md">
           <DialogHeader>
             <DialogTitle className="font-display text-xl">
               {editing ? "Editar producto" : "Nuevo producto"}
@@ -292,31 +313,42 @@ export default function AdminDashboard() {
               </div>
             </div>
 
-            {/* SECCIÓN DE IMÁGENES */}
+            {/* --- SECCIÓN DE IMÁGENES (AHORA CON UPLOAD) --- */}
             <div className="space-y-3 border-t pt-4">
               <div className="flex items-center justify-between">
                 <label className="font-body text-sm font-medium flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" /> Imágenes (URLs)
+                  <ImageIcon className="h-4 w-4" /> Galería de Imágenes
                 </label>
-                <Button type="button" variant="outline" size="sm" onClick={addImageField}>+ Añadir</Button>
-              </div>
-              {form.images.map((img, idx) => (
-                <div key={idx} className="flex gap-2">
+                <div className="relative">
                   <Input 
-                    value={img} 
-                    onChange={(e) => {
-                      const newImgs = [...form.images];
-                      newImgs[idx] = e.target.value;
-                      setForm({ ...form, images: newImgs });
-                    }} 
-                    placeholder="https://..." 
-                    className="font-body flex-1" 
+                    type="file" 
+                    accept="image/*" 
+                    onChange={handleUploadFile} 
+                    className="hidden" 
+                    id="file-upload" 
+                    disabled={uploading}
                   />
-                  <Button variant="ghost" size="icon" onClick={() => removeImageField(idx)} className="text-destructive">
-                    <X className="h-4 w-4" />
-                  </Button>
+                  <label htmlFor="file-upload">
+                    <Button type="button" variant="outline" size="sm" asChild className="cursor-pointer">
+                      <span>{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />} Subir</span>
+                    </label>
+                  </label>
                 </div>
-              ))}
+              </div>
+              
+              <div className="grid grid-cols-3 gap-2">
+                {form.images.map((img, idx) => (
+                  <div key={idx} className="relative group aspect-[3/4] border rounded-sm overflow-hidden bg-secondary">
+                    <img src={img} alt="" className="w-full h-full object-cover" />
+                    <button 
+                      onClick={() => removeImage(idx)}
+                      className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </div>
+                ))}
+              </div>
             </div>
 
             {/* SECCIÓN DE COLORES */}
@@ -389,8 +421,13 @@ export default function AdminDashboard() {
                 </div>
               )}
             </div>
-            <Button onClick={handleSave} className="w-full gap-2 font-body bg-black hover:bg-black/90 text-white">
-              <Save className="h-4 w-4" /> {editing ? "Guardar cambios" : "Crear producto"}
+            <Button 
+              onClick={handleSave} 
+              disabled={uploading}
+              className="w-full gap-2 font-body bg-black hover:bg-black/90 text-white py-6"
+            >
+              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
+              {editing ? "Guardar cambios" : "Crear producto"}
             </Button>
           </div>
         </DialogContent>
@@ -398,3 +435,5 @@ export default function AdminDashboard() {
     </div>
   );
 }
+
+            
