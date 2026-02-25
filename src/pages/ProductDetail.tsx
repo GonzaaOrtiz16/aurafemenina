@@ -21,6 +21,8 @@ export default function ProductDetail() {
 
   useEffect(() => {
     if (product) {
+      // ESTO ES CLAVE: Nos va a decir qué está viendo la página realmente
+      console.log("🔍 DATOS RECIBIDOS DEL PRODUCTO:", product);
       setCurrentImageIndex(0);
       setSelectedSize("");
       setSelectedColorHex("");
@@ -30,28 +32,34 @@ export default function ProductDetail() {
   if (isLoading) return <Layout><div className="container py-10"><Skeleton className="h-[400px]" /></div></Layout>;
   if (!product) return null;
 
-  // --- SOLUCIÓN TALLES ---
+  // --- FILTRO EXTREMO PARA EL TALLE "0" ---
   const availableSizes = (() => {
-    if (!product.sizes) return [];
-    if (typeof product.sizes === 'object' && !Array.isArray(product.sizes)) {
-      return Object.keys(product.sizes).filter(s => s !== "0"); // Filtra el "0" si aparece como llave
+    let sizes = product.sizes;
+    if (!sizes) return [];
+    if (typeof sizes === 'string') {
+      try { sizes = JSON.parse(sizes); } catch(e) {}
     }
-    return Array.isArray(product.sizes) ? product.sizes : [];
+    
+    let parsedSizes: string[] = [];
+    if (Array.isArray(sizes)) {
+      parsedSizes = sizes;
+    } else if (typeof sizes === 'object') {
+      parsedSizes = Object.keys(sizes);
+    }
+    
+    // Eliminamos cualquier "0", número 0, o espacios vacíos
+    return parsedSizes.filter(s => s !== "0" && s !== 0 && s !== "");
   })();
 
-  // --- SOLUCIÓN COLORES (PROCESA EL TEXTO DE SQL) ---
+  // --- LECTURA DE COLORES ---
   const listaColores = (() => {
-    if (!product.colores) return [];
-    if (typeof product.colores === 'string') {
-      try {
-        // Convierte el texto [{"hex":"#ffffff"}] en un objeto real
-        return JSON.parse(product.colores);
-      } catch (e) {
-        console.error("Error al leer colores:", e);
-        return [];
-      }
+    // Busca "colores" o "colors" por si se llama distinto
+    let rawColors = product.colores || (product as any).colors;
+    if (!rawColors) return [];
+    if (typeof rawColors === 'string') {
+      try { return JSON.parse(rawColors); } catch (e) { return []; }
     }
-    return Array.isArray(product.colores) ? product.colores : [];
+    return Array.isArray(rawColors) ? rawColors : [];
   })();
 
   const handleAddToCart = () => {
@@ -61,14 +69,12 @@ export default function ProductDetail() {
     }
     
     const colorObj = listaColores.find((c: any) => c.hex === selectedColorHex);
-    
     if (listaColores.length > 0 && !selectedColorHex) {
       toast({ title: "Seleccioná un color", variant: "destructive" });
       return;
     }
 
     addItem(product, selectedSize, colorObj?.nombre || "");
-    
     toast({
       title: "¡Agregado!",
       description: `${product.name} ${colorObj ? '- ' + colorObj.nombre : ''} - Talle ${selectedSize}`,
@@ -99,7 +105,7 @@ export default function ProductDetail() {
             <h1 className="font-display text-3xl font-semibold mb-2 uppercase italic tracking-tighter">{product.name}</h1>
             <p className="font-body text-2xl font-bold mb-6">{formatPrice(product.price)}</p>
 
-            {/* SELECTOR DE COLORES (DIBUJA LOS CÍRCULOS) */}
+            {/* SELECTOR DE COLORES */}
             {listaColores.length > 0 && (
               <div className="mb-8">
                 <p className="text-xs uppercase tracking-widest font-semibold mb-3">
@@ -125,22 +131,24 @@ export default function ProductDetail() {
             )}
 
             {/* SELECTOR DE TALLES */}
-            <div className="mb-8">
-              <p className="text-xs uppercase tracking-widest font-semibold mb-3">Talle</p>
-              <div className="flex flex-wrap gap-2">
-                {availableSizes.map((size: string) => (
-                  <button
-                    key={size}
-                    onClick={() => setSelectedSize(size)}
-                    className={`min-w-[54px] h-11 border transition-all font-body text-sm ${
-                      selectedSize === size ? "bg-black text-white border-black" : "bg-white hover:border-black"
-                    }`}
-                  >
-                    {size}
-                  </button>
-                ))}
+            {availableSizes.length > 0 && (
+              <div className="mb-8">
+                <p className="text-xs uppercase tracking-widest font-semibold mb-3">Talle</p>
+                <div className="flex flex-wrap gap-2">
+                  {availableSizes.map((size: string) => (
+                    <button
+                      key={size}
+                      onClick={() => setSelectedSize(size)}
+                      className={`min-w-[54px] h-11 border transition-all font-body text-sm ${
+                        selectedSize === size ? "bg-black text-white border-black" : "bg-white hover:border-black"
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
+            )}
 
             <Button onClick={handleAddToCart} size="lg" className="w-full bg-black text-white h-14 uppercase tracking-widest rounded-none">
               <ShoppingBag className="h-5 w-5 mr-2" /> Agregar al carrito
