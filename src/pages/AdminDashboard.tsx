@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+                    import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
@@ -51,7 +51,7 @@ export default function AdminDashboard() {
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbProduct | null>(null);
-  const [uploading, setUploading] = useState(false); // Estado para la carga de archivos
+  const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
     name: "",
@@ -60,7 +60,7 @@ export default function AdminDashboard() {
     price: "",
     category_id: "",
     featured: false,
-    images: [] as string[], // Empezamos con array vacío
+    images: [] as string[],
     colores: [] as { nombre: string; hex: string }[],
     sizes: {} as Record<string, number>,
   });
@@ -117,7 +117,7 @@ export default function AdminDashboard() {
     setDialogOpen(true);
   };
 
-  // --- NUEVA FUNCIÓN PARA SUBIR ARCHIVOS ---
+  // --- FUNCIÓN PARA SUBIR IMÁGENES ---
   const handleUploadFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -142,9 +142,9 @@ export default function AdminDashboard() {
         images: [...prev.images, urlData.publicUrl]
       }));
 
-      toast({ title: "Imagen subida", description: "La foto se agregó correctamente." });
+      toast({ title: "Imagen subida", description: "La foto se agregó a la galería." });
     } catch (error: any) {
-      toast({ title: "Error al subir", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: "No se pudo subir la imagen. Revisá los permisos en Supabase.", variant: "destructive" });
     } finally {
       setUploading(false);
     }
@@ -213,11 +213,11 @@ export default function AdminDashboard() {
   const getCategoryName = (id: string | null) => categories.find((c) => c.id === id)?.name || "-";
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background font-body">
       <header className="sticky top-0 z-50 border-b border-border bg-background/95 backdrop-blur">
         <div className="container flex h-14 items-center justify-between px-4">
           <h1 className="font-display text-lg md:text-xl font-semibold tracking-wider">AURA FEMENINA — Admin</h1>
-          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 font-body text-xs">
+          <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 text-xs">
             <LogOut className="h-4 w-4" /> Salir
           </Button>
         </div>
@@ -226,22 +226,21 @@ export default function AdminDashboard() {
       <div className="container py-6 px-4">
         <div className="flex items-center justify-between mb-6">
           <h2 className="font-display text-2xl font-semibold">Productos</h2>
-          <Button onClick={openNew} className="gap-2 font-body text-sm bg-black text-white">
+          <Button onClick={openNew} className="gap-2 bg-black text-white hover:bg-black/90">
             <Plus className="h-4 w-4" /> Nuevo producto
           </Button>
         </div>
 
         {loading ? (
-          <p className="font-body text-sm text-muted-foreground">Cargando...</p>
+          <p className="text-sm text-muted-foreground">Cargando...</p>
         ) : (
           <div className="border border-border rounded-sm overflow-x-auto">
-            <table className="w-full text-sm font-body">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border bg-secondary">
                   <th className="text-left p-3 font-medium">Producto</th>
                   <th className="text-left p-3 font-medium hidden md:table-cell">Categoría</th>
                   <th className="text-right p-3 font-medium">Precio</th>
-                  <th className="text-center p-3 font-medium hidden sm:table-cell">Destacado</th>
                   <th className="text-right p-3 font-medium">Acciones</th>
                 </tr>
               </thead>
@@ -253,12 +252,11 @@ export default function AdminDashboard() {
                         {p.images && p.images[0] && (
                           <img src={p.images[0]} alt="" className="h-10 w-8 object-cover rounded-sm bg-secondary flex-shrink-0" />
                         )}
-                        <span className="font-medium truncate max-w-[150px] md:max-w-[200px]">{p.name}</span>
+                        <span className="font-medium truncate max-w-[150px]">{p.name}</span>
                       </div>
                     </td>
                     <td className="p-3 hidden md:table-cell text-muted-foreground">{getCategoryName(p.category_id)}</td>
                     <td className="p-3 text-right font-semibold">{formatPrice(Number(p.price))}</td>
-                    <td className="p-3 text-center hidden sm:table-cell">{p.featured ? "⭐" : "-"}</td>
                     <td className="p-3 text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEdit(p)}>
@@ -280,96 +278,104 @@ export default function AdminDashboard() {
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw] rounded-md">
           <DialogHeader>
-            <DialogTitle className="font-display text-xl">
+            <DialogTitle className="font-display text-xl text-center">
               {editing ? "Editar producto" : "Nuevo producto"}
             </DialogTitle>
           </DialogHeader>
-          <div className="space-y-6">
+          <div className="space-y-6 pt-4">
             <div className="space-y-4">
               <div>
-                <label className="font-body text-sm font-medium">Nombre</label>
-                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} className="font-body" />
+                <label className="text-sm font-medium mb-1 block">Nombre</label>
+                <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} />
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="font-body text-sm font-medium">Precio</label>
-                  <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="font-body" />
+                  <label className="text-sm font-medium mb-1 block">Precio</label>
+                  <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
                 </div>
                 <div>
-                  <label className="font-body text-sm font-medium">Categoría</label>
+                  <label className="text-sm font-medium mb-1 block">Categoría</label>
                   <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
-                    <SelectTrigger className="font-body"><SelectValue placeholder="Seleccionar" /></SelectTrigger>
+                    <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                     <SelectContent>
                       {categories.map((c) => (
-                        <SelectItem key={c.id} value={c.id} className="font-body">{c.name}</SelectItem>
+                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
               </div>
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 bg-secondary/20 p-3 rounded-md">
                 <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
-                <label className="font-body text-sm">Producto destacado</label>
+                <label className="text-sm">Producto destacado (aparece en inicio)</label>
               </div>
             </div>
 
-            {/* --- SECCIÓN DE IMÁGENES (AHORA CON UPLOAD) --- */}
+            {/* --- SECCIÓN DE IMÁGENES ACTUALIZADA --- */}
             <div className="space-y-3 border-t pt-4">
-              <div className="flex items-center justify-between">
-                <label className="font-body text-sm font-medium flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4" /> Galería de Imágenes
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4" /> Galería de Fotos
                 </label>
                 <div className="relative">
-                  <Input 
+                  <input 
                     type="file" 
                     accept="image/*" 
                     onChange={handleUploadFile} 
                     className="hidden" 
-                    id="file-upload" 
+                    id="product-upload" 
                     disabled={uploading}
                   />
-                  <label htmlFor="file-upload">
+                  <label htmlFor="product-upload">
                     <Button type="button" variant="outline" size="sm" asChild className="cursor-pointer">
-                      <span>{uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4 mr-2" />} Subir</span>
+                      <span>
+                        {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
+                        {uploading ? "Subiendo..." : "Subir Foto"}
+                      </span>
                     </label>
                   </label>
                 </div>
               </div>
               
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-3 gap-3">
                 {form.images.map((img, idx) => (
-                  <div key={idx} className="relative group aspect-[3/4] border rounded-sm overflow-hidden bg-secondary">
+                  <div key={idx} className="relative aspect-[3/4] border rounded-md overflow-hidden bg-secondary group">
                     <img src={img} alt="" className="w-full h-full object-cover" />
                     <button 
                       onClick={() => removeImage(idx)}
-                      className="absolute top-1 right-1 bg-destructive text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
+                      className="absolute top-1 right-1 bg-black/60 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity"
                     >
                       <X className="h-3 w-3" />
                     </button>
                   </div>
                 ))}
+                {form.images.length === 0 && !uploading && (
+                  <div className="col-span-3 py-6 border-2 border-dashed border-border rounded-md text-center text-xs text-muted-foreground">
+                    No hay fotos. Tocá "Subir Foto" para empezar.
+                  </div>
+                )}
               </div>
             </div>
 
             {/* SECCIÓN DE COLORES */}
             <div className="space-y-3 border-t pt-4">
               <div className="flex items-center justify-between">
-                <label className="font-body text-sm font-medium flex items-center gap-2">
-                  <Palette className="h-4 w-4" /> Variantes de Color
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <Palette className="h-4 w-4" /> Colores disponibles
                 </label>
-                <Button type="button" variant="outline" size="sm" onClick={addColorField}>+ Añadir</Button>
+                <Button type="button" variant="ghost" size="sm" onClick={addColorField} className="text-xs">+ Añadir</Button>
               </div>
               {form.colores.map((color, idx) => (
-                <div key={idx} className="flex gap-2 items-center bg-secondary/30 p-2 rounded-sm">
+                <div key={idx} className="flex gap-2 items-center bg-secondary/40 p-2 rounded-md">
                   <Input 
-                    placeholder="Nombre (Blanco)" 
+                    placeholder="Nombre (ej: Blanco)" 
                     value={color.nombre}
                     onChange={(e) => {
                       const newCols = [...form.colores];
                       newCols[idx].nombre = e.target.value;
                       setForm({ ...form, colores: newCols });
                     }}
-                    className="h-8 text-xs"
+                    className="h-8 text-xs bg-white"
                   />
                   <Input 
                     type="color" 
@@ -379,7 +385,7 @@ export default function AdminDashboard() {
                       newCols[idx].hex = e.target.value;
                       setForm({ ...form, colores: newCols });
                     }}
-                    className="w-12 h-8 p-1 cursor-pointer"
+                    className="w-12 h-8 p-1 cursor-pointer border-none bg-transparent"
                   />
                   <Button variant="ghost" size="icon" onClick={() => removeColorField(idx)} className="h-8 w-8 text-destructive">
                     <X className="h-4 w-4" />
@@ -388,16 +394,17 @@ export default function AdminDashboard() {
               ))}
             </div>
 
-            <div>
-              <label className="font-body text-sm font-medium mb-2 block">Talles y stock</label>
-              <div className="flex flex-wrap gap-2 mb-3">
+            {/* TALLES */}
+            <div className="border-t pt-4">
+              <label className="text-sm font-medium mb-3 block">Talles y Stock inicial</label>
+              <div className="flex flex-wrap gap-2 mb-4">
                 {SIZES.map((s) => (
                   <button
                     key={s}
                     type="button"
                     onClick={() => toggleSize(s)}
-                    className={`px-3 py-1 rounded-sm border text-xs font-body transition-colors ${
-                      s in form.sizes ? "bg-primary text-primary-foreground border-primary" : "border-border hover:bg-secondary"
+                    className={`px-3 py-1 rounded-md border text-xs transition-all ${
+                      s in form.sizes ? "bg-black text-white border-black" : "border-border hover:bg-secondary"
                     }`}
                   >
                     {s}
@@ -405,29 +412,29 @@ export default function AdminDashboard() {
                 ))}
               </div>
               {Object.keys(form.sizes).length > 0 && (
-                <div className="grid grid-cols-3 gap-2">
+                <div className="grid grid-cols-3 gap-3 bg-secondary/20 p-3 rounded-md">
                   {Object.entries(form.sizes).map(([size, stock]) => (
-                    <div key={size} className="flex items-center gap-2">
-                      <span className="font-body text-xs font-medium w-8">{size}</span>
+                    <div key={size} className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold uppercase">{size}</span>
                       <Input
                         type="number"
-                        min={0}
                         value={stock}
                         onChange={(e) => updateStock(size, Number(e.target.value))}
-                        className="font-body h-8 text-xs"
+                        className="h-8 text-xs bg-white"
                       />
                     </div>
                   ))}
                 </div>
               )}
             </div>
+
             <Button 
               onClick={handleSave} 
               disabled={uploading}
-              className="w-full gap-2 font-body bg-black hover:bg-black/90 text-white py-6"
+              className="w-full bg-black text-white hover:bg-black/90 py-6 text-lg rounded-md"
             >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />} 
-              {editing ? "Guardar cambios" : "Crear producto"}
+              {uploading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Save className="h-5 w-5 mr-2" />} 
+              {editing ? "Guardar Cambios" : "Publicar Producto"}
             </Button>
           </div>
         </DialogContent>
@@ -435,5 +442,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-            
