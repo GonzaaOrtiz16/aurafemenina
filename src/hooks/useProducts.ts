@@ -12,6 +12,7 @@ interface DbProduct {
   sizes: Record<string, number>;
   images: string[];
   featured: boolean;
+  colores?: any; // Agregamos la columna que faltaba
   created_at: string;
   updated_at: string;
 }
@@ -30,10 +31,13 @@ function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: 
     price: Number(p.price),
     category: categoryName || "",
     categorySlug: categorySlug || "",
-    sizes: Object.keys(p.sizes || {}),
+    // Mantenemos la lógica de talles para que no rompa
+    sizes: p.sizes ? Object.keys(p.sizes) : [],
     images: p.images || [],
     description: p.description || "",
     featured: p.featured,
+    // PASAMOS LOS COLORES A LA WEB
+    colores: p.colores || [], 
   };
 }
 
@@ -101,7 +105,7 @@ export function useProductBySlug(slug: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, categories(name, slug)")
+        .select("*, categories(name, slug)") // El "*" ya trae la columna colores de SQL
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
