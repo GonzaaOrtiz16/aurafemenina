@@ -48,7 +48,7 @@ export default function ProductDetail() {
     }
     
     // Eliminamos cualquier "0", número 0, o espacios vacíos
-    return parsedSizes.filter(s => s !== "0" && s !== 0 && s !== "");
+    return parsedSizes.filter(s => String(s) !== "0" && s !== "");
   })();
 
   // --- LECTURA DE COLORES ---

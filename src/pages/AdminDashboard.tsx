@@ -87,7 +87,7 @@ export default function AdminDashboard() {
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("name"),
     ]);
-    setProducts((prods as DbProduct[]) || []);
+    setProducts((prods as unknown as DbProduct[]) || []);
     setCategories((cats as DbCategory[]) || []);
     setLoading(false);
   };
@@ -332,7 +332,7 @@ export default function AdminDashboard() {
                         {uploading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Upload className="h-4 w-4 mr-2" />}
                         {uploading ? "Subiendo..." : "Subir Foto"}
                       </span>
-                    </label>
+                    </Button>
                   </label>
                 </div>
               </div>
