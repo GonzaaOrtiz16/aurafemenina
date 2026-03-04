@@ -6,7 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/shipping";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShoppingBag, ChevronLeft, ChevronRight, SearchPlus } from "lucide-react";
+import { ShoppingBag, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 export default function ProductDetail() {
@@ -106,9 +106,9 @@ export default function ProductDetail() {
                     alt={`${product.name} ${idx + 1}`} 
                     className="h-full w-full object-cover transition-transform duration-500 hover:scale-110 cursor-zoom-in" 
                   />
-                  {/* Icono de zoom visual */}
+                  {/* Icono de zoom visual corregido */}
                   <div className="absolute top-4 right-4 p-2 bg-black/10 rounded-full md:hidden">
-                    <SearchPlus className="w-5 h-5 text-white/50" />
+                    <ZoomIn className="w-5 h-5 text-white/50" />
                   </div>
                 </div>
               ))}
