@@ -1,85 +1,62 @@
-// src/components/store/HeroSection.tsx
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
 export default function HeroSection() {
   return (
-    <section className="relative h-[90vh] min-h-[700px] w-full bg-white overflow-hidden flex items-center justify-center">
+    <section className="relative w-full h-[85vh] min-h-[600px] flex flex-col md:flex-row bg-white overflow-hidden">
       
-      {/* DIFUMINADO ROSA DE FONDO (reemplazando el difuminado oscuro de image_11.png) */}
-      <div className="absolute inset-0">
-        {/* Imagen de fondo completa (la de la modelo) */}
-        <img
-          src="/banner-aura.jpg"
-          alt="Tu Aura Femenina"
-          className="h-full w-full object-cover object-center"
-          loading="eager"
-        />
-        {/* Capa de difuminado rosa suave (Gradient) desde la izquierda */}
-        {/* Un gradiente de blanco difuso a rosa suave que se fusiona con la imagen de la modelo */}
-        <div className="absolute inset-0 bg-gradient-to-r from-pink-50/95 via-pink-50/50 to-transparent" />
-        {/* Un gradiente sutil desde abajo para suavizar la base de la imagen con la base de la sección */}
-        <div className="absolute inset-0 bg-gradient-to-t from-white/80 via-transparent to-transparent" />
-      </div>
-
-      {/* CONTENIDO TEXTUAL (Diseño anterior preferido, a la izquierda) */}
-      {/* Usamos grid para estructurar la sección de texto a la izquierda y la imagen a la derecha */}
-      <div className="relative z-10 container grid grid-cols-1 md:grid-cols-12 items-center h-full">
-        {/* Columna de texto a la izquierda */}
-        <div className="md:col-span-6 flex flex-col items-start text-left animate-fade-in px-8 md:px-20 py-20 bg-white/20 backdrop-blur-sm rounded-none">
-          
-          <p className="text-pink-900/70 text-sm md:text-base tracking-[0.5em] font-medium uppercase mb-6 drop-shadow-sm">
+      {/* COLUMNA IZQUIERDA: TEXTO (Fondo rosa pálido sólido para máxima limpieza) */}
+      <div className="w-full md:w-1/2 flex items-center justify-center bg-[#FFF5F7] px-8 md:px-16 py-20 relative z-10">
+        <div className="max-w-md animate-fade-in">
+          <p className="text-pink-300 text-[10px] md:text-xs tracking-[0.6em] font-bold uppercase mb-4">
             Descubrí tu esencia
           </p>
           
-          {/* Título: "TU AURA" y abajo "FEMENINA" */}
-          {/* Aumentar el tamaño de fuente como se solicitó */}
-          <h1 className="font-display text-7xl md:text-8xl lg:text-9xl font-light text-pink-950 tracking-tight leading-[1] mb-2 drop-shadow-lg">
+          {/* Título más chico y delicado */}
+          <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-light text-zinc-800 tracking-tight leading-[1.1] mb-6">
             TU AURA <br />
-            {/* FEMENINA en itálico y negrita rosa (como antes, pero en rosa suave) */}
-            <span className="font-bold italic text-pink-400">FEMENINA</span>
+            <span className="font-serif italic text-pink-400 font-normal">FEMENINA</span>
           </h1>
 
-          <p className="text-zinc-600 text-lg md:text-xl font-light max-w-lg mt-8 leading-relaxed drop-shadow-sm">
-            Prendas pensadas para resaltar tu belleza natural y potenciar tu confianza. Conecta con tu feminidad de la manera más elegante y auténtica.
+          <p className="text-zinc-500 text-sm md:text-base font-light max-w-sm leading-relaxed mb-10">
+            Prendas pensadas para resaltar tu belleza natural y potenciar tu confianza. 
+            Conecta con tu feminidad de la manera más elegante.
           </p>
 
-          <div className="flex flex-col md:flex-row items-start gap-6 pt-12">
-            <Link to="/productos" className="w-full md:w-auto">
-              {/* Botón sólido recto de image_10.png pero en rosa */}
-              <Button size="lg" className="bg-pink-400 text-white hover:bg-pink-500 transition-all duration-500 font-bold tracking-[0.3em] text-xs uppercase px-16 py-8 rounded-none w-full shadow-lg shadow-pink-100 border-none">
+          <div className="flex flex-col sm:flex-row items-start gap-4">
+            <Link to="/productos" className="w-full sm:w-auto">
+              <Button size="lg" className="bg-pink-400 text-white hover:bg-pink-500 transition-all duration-500 font-bold tracking-[0.2em] text-[10px] uppercase px-10 py-6 rounded-none w-full border-none">
                 VER COLECCIÓN
               </Button>
             </Link>
-            <Link to="/como-comprar" className="w-full md:w-auto">
-              {/* Botón con contorno recto de image_10.png pero en rosa */}
-              <Button size="lg" variant="outline" className="bg-transparent text-pink-600 border-pink-300 hover:bg-pink-50 transition-all duration-500 font-bold tracking-[0.3em] text-xs uppercase px-16 py-8 rounded-none w-full">
+            <Link to="/como-comprar" className="w-full sm:w-auto">
+              <Button size="lg" variant="outline" className="bg-transparent text-zinc-400 border-zinc-200 hover:bg-white transition-all duration-500 font-bold tracking-[0.2em] text-[10px] uppercase px-10 py-6 rounded-none w-full">
                 CÓMO COMPRAR
               </Button>
             </Link>
           </div>
         </div>
-
-        {/* Columna de imagen a la derecha (50%) */}
-        <div className="md:col-span-6 h-full w-full">
-          {/* No hay contenido de imagen aquí, ya que la imagen de fondo de ancho completo sirve como panel derecho */}
-          {/* El degradado rosa de la capa de fondo se encarga de difuminar el borde izquierdo de la imagen */}
-        </div>
       </div>
 
-      {/* Detalle flotante elegante (mantenido, en rosa pálido) */}
-      <div className="absolute bottom-16 right-16 hidden lg:block animate-pulse">
-        <p className="text-pink-100 text-[80px] font-display italic opacity-50 select-none">Be unique</p>
+      {/* COLUMNA DERECHA: IMAGEN (Totalmente despejada) */}
+      <div className="w-full md:w-1/2 h-[450px] md:h-full relative">
+        <img
+          src="/banner-aura.jpg" 
+          alt="Modelo Aura Femenina"
+          className="w-full h-full object-cover object-center"
+          loading="eager"
+        />
+        {/* Un pequeño degradado que "muere" antes de tocar a la modelo para dar suavidad al centro */}
+        <div className="absolute inset-y-0 left-0 w-24 bg-gradient-to-r from-[#FFF5F7] to-transparent hidden md:block" />
       </div>
 
-      {/* Decoración vertical (como image_10.png, en rosa pálido) */}
-      <div className="absolute bottom-10 left-10 hidden md:block">
+      {/* Decoración 2026 vertical (estilo delicado) */}
+      <div className="absolute bottom-10 left-10 hidden md:block opacity-30">
         <div className="flex flex-col gap-2 items-center">
-            <div className="w-px h-16 bg-pink-100"></div>
-            <p className="text-[10px] text-pink-100 tracking-[0.3em] vertical-text">2026</p>
+            <div className="w-px h-12 bg-zinc-400"></div>
+            <p className="text-[9px] text-zinc-500 tracking-[0.3em] [writing-mode:vertical-lr]">2026</p>
         </div>
       </div>
-
     </section>
   );
 }
