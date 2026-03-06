@@ -2,80 +2,52 @@ import { Truck, MessageCircle, Tag, Instagram } from "lucide-react";
 
 export default function StoreInfo() {
   return (
-    <section className="w-full">
-      {/* SECCIÓN SUPERIOR: Texto Grande y Negro */}
-      <div className="bg-white py-20">
+    <section className="w-full overflow-hidden">
+      {/* SECCIÓN BLANCA: Beneficios apilables en móvil */}
+      <div className="bg-white py-12 md:py-20">
         <div className="container mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
+          <div className="flex flex-col md:grid md:grid-cols-3 gap-12 md:gap-16">
             
-            {/* Envíos */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-black">
-                <Truck className="w-10 h-10 stroke-[1.5px]" />
+            {/* Ítem 1 */}
+            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 relative">
+              <Truck className="w-12 h-12 md:w-10 md:h-10 text-black stroke-[1.5px]" />
+              <div>
+                <h3 className="text-xl md:text-lg font-black text-black uppercase">ENVÍOS</h3>
+                <p className="text-sm md:text-[13px] text-black font-bold mt-1">¡Hacemos envíos a todo el país!</p>
               </div>
-              <div className="flex flex-col">
-                <h3 className="text-lg font-black tracking-tight text-black uppercase leading-none">
-                  ENVÍOS
-                </h3>
-                <p className="text-sm text-black font-bold mt-1">
-                  ¡Hacemos envíos a todo el país!
-                </p>
-              </div>
-              <div className="hidden md:block h-16 w-[2px] bg-black/10 ml-auto" />
+              <div className="hidden md:block absolute -right-8 top-1/2 -translate-y-1/2 h-12 w-px bg-zinc-200" />
             </div>
 
-            {/* Contacto WhatsApp */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-black">
-                <MessageCircle className="w-10 h-10 stroke-[1.5px]" />
+            {/* Ítem 2 [cite: 2026-02-24] */}
+            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4 relative">
+              <MessageCircle className="w-12 h-12 md:w-10 md:h-10 text-black stroke-[1.5px]" />
+              <div>
+                <h3 className="text-xl md:text-lg font-black text-black uppercase">ESCRIBINOS!</h3>
+                <p className="text-sm md:text-[13px] text-black font-bold mt-1">WhatsApp: 1134944228</p>
               </div>
-              <div className="flex flex-col">
-                <h3 className="text-lg font-black tracking-tight text-black uppercase leading-none">
-                  ESCRIBINOS!
-                </h3>
-                <p className="text-sm text-black font-bold mt-1">
-                  WhatsApp: 1134944228
-                </p>
-              </div>
-              <div className="hidden md:block h-16 w-[2px] bg-black/10 ml-auto" />
+              <div className="hidden md:block absolute -right-8 top-1/2 -translate-y-1/2 h-12 w-px bg-zinc-200" />
             </div>
 
-            {/* Compra Mínima */}
-            <div className="flex items-center justify-center gap-6">
-              <div className="text-black">
-                <Tag className="w-10 h-10 stroke-[1.5px]" />
-              </div>
-              <div className="flex flex-col">
-                <h3 className="text-lg font-black tracking-tight text-black uppercase leading-none">
-                  MARCA MAYORISTA
-                </h3>
-                <p className="text-sm text-black font-bold mt-1">
-                  Mínimo de compra $ 100.000
-                </p>
+            {/* Ítem 3 */}
+            <div className="flex flex-col md:flex-row items-center md:items-start text-center md:text-left gap-4">
+              <Tag className="w-12 h-12 md:w-10 md:h-10 text-black stroke-[1.5px]" />
+              <div>
+                <h3 className="text-xl md:text-lg font-black text-black uppercase leading-tight">MARCA MAYORISTA</h3>
+                <p className="text-sm md:text-[13px] text-black font-bold mt-1">Mínimo de compra $ 100.000</p>
               </div>
             </div>
+
           </div>
         </div>
       </div>
 
-      {/* SECCIÓN INFERIOR: Rosa Bebé con Instagram Resaltado */}
-      <div className="bg-[#FFF1F2] py-16 border-t border-pink-100/50">
-        <div className="container mx-auto px-6 flex justify-center">
-          <a 
-            href="https://instagram.com/aurafemenina.oficial" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex flex-col items-center gap-4 group transition-transform hover:scale-105"
-          >
-            <Instagram className="w-14 h-14 text-black stroke-[1.5px]" />
-            <div className="text-center">
-              <p className="text-xs tracking-[0.5em] text-black/70 uppercase font-black">
-                Seguinos en Instagram
-              </p>
-              <p className="text-2xl md:text-4xl font-black tracking-tighter text-black mt-2 italic font-display">
-                @aurafemenina.oficial
-              </p>
-            </div>
+      {/* SECCIÓN ROSA: Instagram con letras Gigantes */}
+      <div className="bg-[#FFF1F2] py-14 border-t border-pink-100">
+        <div className="container mx-auto px-6 flex justify-center text-center">
+          <a href="https://instagram.com/aurafemenina.oficial" target="_blank" className="group">
+            <Instagram className="w-14 h-14 text-black mx-auto mb-4" />
+            <p className="text-[10px] md:text-xs tracking-[0.5em] text-black font-black uppercase opacity-70">SEGUINOS EN INSTAGRAM</p>
+            <p className="text-2xl md:text-4xl font-black text-black mt-2 italic">@aurafemenina.oficial</p>
           </a>
         </div>
       </div>
