@@ -1,3 +1,4 @@
+// src/components/store/Header.tsx
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Menu, ShoppingBag, X, User, ChevronDown } from "lucide-react";
@@ -18,12 +19,13 @@ export default function Header() {
   const [showDropdown, setShowDropdown] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/80 backdrop-blur-md border-b border-pink-100">
-      {/* Barra superior delicada */}
+    <header className="sticky top-0 z-50 w-full bg-white backdrop-blur-md border-b border-pink-100">
+      {/* Barra superior delicada (con el texto rosa suave de image_11.png) */}
       <div className="hidden md:flex bg-pink-50 text-[11px] tracking-[0.3em] h-10 items-center justify-center uppercase font-medium text-pink-400">
         Resaltá tu belleza única — Envíos a todo el país
       </div>
 
+      {/* Contenedor principal con el alto ancho que te gustó */}
       <div className="container flex h-24 md:h-28 items-center justify-between px-6 md:px-12">
         
         {/* Mobile menu */}
@@ -45,12 +47,12 @@ export default function Header() {
             </Sheet>
         </div>
 
-        {/* LOGO - Más estilizado y femenino */}
+        {/* LOGO - Estilo delicado y rosa de image_11.png */}
         <Link to="/" className="font-display text-2xl md:text-4xl font-light tracking-[0.5em] text-pink-950 uppercase transition-all hover:opacity-70">
           AURA<span className="font-bold italic text-pink-300">FEMENINA</span>
         </Link>
 
-        {/* LINKS CENTRALES - Más grandes y aireados */}
+        {/* LINKS CENTRALES con el espaciado ancho que te gustó */}
         <nav className="hidden md:flex items-center gap-14 text-pink-950">
           <Link to="/" className="text-[14px] font-medium tracking-[0.2em] hover:text-pink-400 transition-colors uppercase">INICIO</Link>
           
