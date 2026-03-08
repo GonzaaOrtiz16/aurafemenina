@@ -25,6 +25,21 @@ interface DbCategory {
 }
 
 function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: string): Product {
+  // Derive all available sizes from colores variants or fallback to sizes column
+  const colores = (p.colores as any[]) || [];
+  const hasVariants = colores.length > 0 && colores.some((c: any) => c.sizes && Object.keys(c.sizes).length > 0);
+
+  let allSizes: string[] = [];
+  if (hasVariants) {
+    const sizeSet = new Set<string>();
+    colores.forEach((c: any) => {
+      if (c.sizes) Object.keys(c.sizes).forEach((s) => sizeSet.add(s));
+    });
+    allSizes = Array.from(sizeSet);
+  } else if (p.sizes) {
+    allSizes = Object.keys(p.sizes);
+  }
+
   return {
     id: p.id,
     name: p.name,
@@ -33,11 +48,11 @@ function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: 
     originalPrice: p.original_price ? Number(p.original_price) : undefined,
     category: categoryName || "",
     categorySlug: categorySlug || "",
-    sizes: p.sizes ? Object.keys(p.sizes) : [],
+    sizes: allSizes,
     images: p.images || [],
     description: p.description || "",
     featured: p.featured,
-    colores: p.colores || [], 
+    colores: colores,
   };
 }
 
