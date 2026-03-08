@@ -16,6 +16,7 @@ export default function Products() {
   const searchTerm = searchParams.get("search")?.toLowerCase() || "";
 
   const [activeSize, setActiveSize] = useState("");
+  const [activeColor, setActiveColor] = useState("");
   const [maxPrice, setMaxPrice] = useState(100000);
 
   const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
@@ -26,6 +27,20 @@ export default function Products() {
     if (products.length === 0) return { min: 0, max: 100000 };
     const prices = products.map((p) => p.price);
     return { min: Math.min(...prices), max: Math.max(...prices) };
+  }, [products]);
+
+  // Extract unique colors from all products
+  const availableColors = useMemo(() => {
+    const colorMap = new Map<string, string>(); // nombre -> hex
+    products.forEach((p) => {
+      const colores = (p.colores || []) as Array<{ nombre?: string; hex?: string }>;
+      colores.forEach((c) => {
+        if (c.nombre && c.hex && !colorMap.has(c.nombre)) {
+          colorMap.set(c.nombre, c.hex);
+        }
+      });
+    });
+    return Array.from(colorMap.entries()).map(([nombre, hex]) => ({ nombre, hex }));
   }, [products]);
 
   // Filtering
@@ -40,7 +55,13 @@ export default function Products() {
 
     const matchesPrice = product.price <= maxPrice;
 
-    return matchesSearch && matchesSize && matchesPrice;
+    const matchesColor = activeColor
+      ? ((product.colores || []) as Array<{ nombre?: string }>).some(
+          (c) => c.nombre?.toLowerCase() === activeColor.toLowerCase()
+        )
+      : true;
+
+    return matchesSearch && matchesSize && matchesPrice && matchesColor;
   });
 
   const handleCategory = (slug: string) => {
@@ -55,11 +76,12 @@ export default function Products() {
 
   const clearFilters = () => {
     setActiveSize("");
+    setActiveColor("");
     setMaxPrice(priceRange.max);
     setSearchParams({});
   };
 
-  const hasActiveFilters = activeSize || maxPrice < priceRange.max || activeCategory || searchTerm;
+  const hasActiveFilters = activeSize || activeColor || maxPrice < priceRange.max || activeCategory || searchTerm;
 
   // Sidebar filter panel (shared between mobile & desktop)
   const FilterPanel = () => (
@@ -118,6 +140,32 @@ export default function Products() {
         </div>
       </div>
 
+      {/* Colors */}
+      {availableColors.length > 0 && (
+        <div>
+          <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+            Color
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {availableColors.map((color) => (
+              <button
+                key={color.nombre}
+                onClick={() => setActiveColor(activeColor === color.nombre ? "" : color.nombre)}
+                title={color.nombre}
+                className={`w-8 h-8 rounded-full border-2 transition-all p-[2px] ${
+                  activeColor === color.nombre ? "border-foreground scale-110" : "border-transparent"
+                }`}
+              >
+                <div className="w-full h-full rounded-full border border-border/30" style={{ backgroundColor: color.hex }} />
+              </button>
+            ))}
+          </div>
+          {activeColor && (
+            <p className="font-body text-xs text-muted-foreground mt-2 capitalize">{activeColor}</p>
+          )}
+        </div>
+      )}
+
       {/* Price Range */}
       <div>
         <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
@@ -173,11 +221,16 @@ export default function Products() {
         <div className="w-12 h-[1px] bg-accent/40 mx-auto mb-10"></div>
 
         {/* Active filter badges (mobile) */}
-        {(activeSize || maxPrice < priceRange.max) && (
+        {(activeSize || activeColor || maxPrice < priceRange.max) && (
           <div className="flex flex-wrap justify-center gap-2 mb-6 md:hidden">
             {activeSize && (
               <span className="text-[10px] bg-secondary px-3 py-1 rounded-full border border-border uppercase font-bold">
                 Talle: {activeSize}
+              </span>
+            )}
+            {activeColor && (
+              <span className="text-[10px] bg-secondary px-3 py-1 rounded-full border border-border uppercase font-bold capitalize">
+                Color: {activeColor}
               </span>
             )}
             {maxPrice < priceRange.max && (
