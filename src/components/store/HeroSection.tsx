@@ -11,14 +11,14 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="relative w-full h-[95vh] md:h-[90vh] overflow-hidden">
+    <section className="relative w-full h-[85vh] md:h-[90vh] overflow-hidden">
       {/* Full-bleed background image with zoom animation */}
       <div className="absolute inset-0">
         <img
           src="/banner-aura.jpg"
           alt="Modelo Aura Femenina"
-          className={`w-full h-full object-cover object-center md:object-top transition-transform duration-[2000ms] ease-out ${
-            loaded ? "scale-100" : "scale-110"
+          className={`w-full h-full object-contain md:object-cover object-[65%_center] transition-transform duration-[2000ms] ease-out ${
+            loaded ? "scale-100" : "scale-105"
           }`}
           loading="eager"
         />
