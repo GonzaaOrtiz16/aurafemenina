@@ -1,5 +1,7 @@
-import type { ShippingResult, CartItem } from "@/types/product";
-import type { ShippingZone } from "@/types/product";
+import type { ShippingResult, CartItem, ShippingZone } from "@/types/product";
+
+// Re-export for convenience
+export type { ShippingZone };
 
 // Zona sur de Buenos Aires: Avellaneda, Lanús, Lomas de Zamora, Quilmes, Berazategui, etc.
 const ZONA_SUR_CP_RANGES: [number, number][] = [
@@ -12,8 +14,6 @@ const ZONA_SUR_CP_RANGES: [number, number][] = [
   [1852, 1859], // Burzaco, Adrogué, Longchamps
   [1804, 1812], // Ezeiza, Canning
 ];
-
-export type ShippingZone = "caba" | "zona_sur" | "gba" | "interior";
 
 export function getShippingZone(codigoPostal: string): ShippingZone | null {
   const cp = parseInt(codigoPostal, 10);
