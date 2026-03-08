@@ -4,8 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Plus, Pencil, Trash2, X, Save, Loader2, Upload, Image as ImageIcon } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, Loader2, Upload, Image as ImageIcon, Tag } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+
+interface EncargueCategory {
+  id: string;
+  name: string;
+  slug: string;
+}
 
 interface CustomProduct {
   id: string;
@@ -15,34 +22,45 @@ interface CustomProduct {
   images: string[];
   price_estimate: number;
   estimated_days: string | null;
+  category_id: string | null;
 }
 
 export default function AdminEncargues() {
   const { toast } = useToast();
   const [products, setProducts] = useState<CustomProduct[]>([]);
+  const [categories, setCategories] = useState<EncargueCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [editing, setEditing] = useState<CustomProduct | null>(null);
   const [uploading, setUploading] = useState(false);
 
   const [form, setForm] = useState({
-    name: "", slug: "", description: "", price_estimate: "", estimated_days: "7-15 días", images: [] as string[],
+    name: "", slug: "", description: "", price_estimate: "", estimated_days: "7-15 días", images: [] as string[], category_id: "",
   });
+
+  const [catForm, setCatForm] = useState({ name: "", slug: "" });
+  const [editingCat, setEditingCat] = useState<EncargueCategory | null>(null);
 
   useEffect(() => { fetchData(); }, []);
 
   const fetchData = async () => {
     setLoading(true);
-    const { data } = await supabase.from("custom_products").select("*").order("created_at", { ascending: false });
-    setProducts((data as CustomProduct[]) || []);
+    const [prodRes, catRes] = await Promise.all([
+      supabase.from("custom_products").select("*").order("created_at", { ascending: false }),
+      supabase.from("encargue_categories").select("*").order("name"),
+    ]);
+    setProducts((prodRes.data as CustomProduct[]) || []);
+    setCategories((catRes.data as EncargueCategory[]) || []);
     setLoading(false);
   };
 
   const generateSlug = (name: string) => name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "");
 
+  // ── Product CRUD ──
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", description: "", price_estimate: "", estimated_days: "7-15 días", images: [] });
+    setForm({ name: "", slug: "", description: "", price_estimate: "", estimated_days: "7-15 días", images: [], category_id: "" });
     setDialogOpen(true);
   };
 
@@ -51,7 +69,7 @@ export default function AdminEncargues() {
     setForm({
       name: p.name, slug: p.slug, description: p.description || "",
       price_estimate: String(p.price_estimate), estimated_days: p.estimated_days || "7-15 días",
-      images: p.images || [],
+      images: p.images || [], category_id: p.category_id || "",
     });
     setDialogOpen(true);
   };
@@ -83,7 +101,7 @@ export default function AdminEncargues() {
     const payload = {
       name: form.name, slug, description: form.description || null,
       price_estimate: Number(form.price_estimate), estimated_days: form.estimated_days || null,
-      images: form.images,
+      images: form.images, category_id: form.category_id || null,
     };
 
     if (editing) {
@@ -107,14 +125,74 @@ export default function AdminEncargues() {
     fetchData();
   };
 
+  // ── Category CRUD ──
+  const openNewCat = () => {
+    setEditingCat(null);
+    setCatForm({ name: "", slug: "" });
+    setCatDialogOpen(true);
+  };
+
+  const openEditCat = (cat: EncargueCategory) => {
+    setEditingCat(cat);
+    setCatForm({ name: cat.name, slug: cat.slug });
+    setCatDialogOpen(true);
+  };
+
+  const handleSaveCat = async () => {
+    const slug = catForm.slug || generateSlug(catForm.name);
+    if (editingCat) {
+      const { error } = await supabase.from("encargue_categories").update({ name: catForm.name, slug }).eq("id", editingCat.id);
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Categoría actualizada" });
+    } else {
+      const { error } = await supabase.from("encargue_categories").insert({ name: catForm.name, slug });
+      if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+      toast({ title: "Categoría creada" });
+    }
+    setCatDialogOpen(false);
+    fetchData();
+  };
+
+  const handleDeleteCat = async (id: string) => {
+    if (!confirm("¿Eliminar esta categoría? Los encargues asociados quedarán sin categoría.")) return;
+    const { error } = await supabase.from("encargue_categories").delete().eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Categoría eliminada" });
+    fetchData();
+  };
+
+  const getCategoryName = (catId: string | null) => categories.find((c) => c.id === catId)?.name || "Sin categoría";
+
   return (
     <div>
       <div className="flex items-center justify-between mb-6">
         <h2 className="font-display text-2xl font-semibold">Productos por Encargue</h2>
-        <Button onClick={openNew} className="gap-2 bg-foreground text-background hover:bg-foreground/90">
-          <Plus className="h-4 w-4" /> Nuevo encargue
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={openNewCat} variant="outline" className="gap-2">
+            <Tag className="h-4 w-4" /> Categorías
+          </Button>
+          <Button onClick={openNew} className="gap-2 bg-foreground text-background hover:bg-foreground/90">
+            <Plus className="h-4 w-4" /> Nuevo encargue
+          </Button>
+        </div>
       </div>
+
+      {/* Category chips */}
+      {categories.length > 0 && (
+        <div className="flex flex-wrap gap-2 mb-6">
+          {categories.map((cat) => (
+            <div key={cat.id} className="flex items-center gap-1 bg-secondary px-3 py-1.5 rounded-sm border border-border">
+              <span className="text-xs font-medium">{cat.name}</span>
+              <button onClick={() => openEditCat(cat)} className="text-muted-foreground hover:text-foreground ml-1">
+                <Pencil className="h-3 w-3" />
+              </button>
+              <button onClick={() => handleDeleteCat(cat.id)} className="text-muted-foreground hover:text-destructive">
+                <X className="h-3 w-3" />
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {loading ? <p className="text-sm text-muted-foreground">Cargando...</p> : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -126,6 +204,11 @@ export default function AdminEncargues() {
               <div className="p-3 space-y-2">
                 <h3 className="font-medium text-sm truncate">{p.name}</h3>
                 <p className="text-xs text-muted-foreground">${p.price_estimate.toLocaleString("es-AR")} est. · {p.estimated_days}</p>
+                {p.category_id && (
+                  <span className="inline-block text-[10px] bg-secondary px-2 py-0.5 rounded-sm border border-border">
+                    {getCategoryName(p.category_id)}
+                  </span>
+                )}
                 <div className="flex gap-1">
                   <Button variant="outline" size="sm" className="flex-1 text-xs" onClick={() => openEdit(p)}><Pencil className="h-3 w-3 mr-1" />Editar</Button>
                   <Button variant="outline" size="sm" className="text-destructive text-xs" onClick={() => handleDelete(p.id)}><Trash2 className="h-3 w-3" /></Button>
@@ -136,6 +219,7 @@ export default function AdminEncargues() {
         </div>
       )}
 
+      {/* Product Dialog */}
       <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto w-[95vw]">
           <DialogHeader>
@@ -145,6 +229,20 @@ export default function AdminEncargues() {
             <div>
               <label className="text-sm font-medium mb-1 block">Nombre</label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Categoría</label>
+              <Select value={form.category_id} onValueChange={(val) => setForm({ ...form, category_id: val === "none" ? "" : val })}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Sin categoría" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Sin categoría</SelectItem>
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Descripción</label>
@@ -187,6 +285,25 @@ export default function AdminEncargues() {
             <Button onClick={handleSave} disabled={uploading} className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg">
               {uploading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Save className="h-5 w-5 mr-2" />}
               {editing ? "Guardar" : "Publicar Encargue"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Category Dialog */}
+      <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
+        <DialogContent className="max-w-sm w-[95vw]">
+          <DialogHeader>
+            <DialogTitle className="font-display text-xl text-center">{editingCat ? "Editar categoría" : "Nueva categoría"}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Nombre</label>
+              <Input value={catForm.name} onChange={(e) => setCatForm({ name: e.target.value, slug: generateSlug(e.target.value) })} placeholder="ej: Camperas" />
+            </div>
+            <Button onClick={handleSaveCat} className="w-full bg-foreground text-background hover:bg-foreground/90">
+              <Save className="h-4 w-4 mr-2" />
+              {editingCat ? "Guardar" : "Crear categoría"}
             </Button>
           </div>
         </DialogContent>
