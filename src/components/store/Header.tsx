@@ -58,7 +58,9 @@ export default function Header() {
               <nav className="flex flex-col mt-10">
                 <Link to="/" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Inicio</Link>
                 <Link to="/productos" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest text-accent">Colección Completa</Link>
+                <Link to="/encargues" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Por Encargue</Link>
                 <Link to="/contacto" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Contacto</Link>
+                <Link to="/login" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Mi Cuenta</Link>
               </nav>
             </SheetContent>
           </Sheet>
