@@ -16,6 +16,7 @@ export default function Products() {
   const searchTerm = searchParams.get("search")?.toLowerCase() || "";
 
   const [activeSize, setActiveSize] = useState("");
+  const [activeColor, setActiveColor] = useState("");
   const [maxPrice, setMaxPrice] = useState(100000);
 
   const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
