@@ -60,6 +60,7 @@ interface ContactData {
 export default function Encargues() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get("categoria") || "";
+  const searchTerm = searchParams.get("search")?.toLowerCase() || "";
 
   const [maxPrice, setMaxPrice] = useState(999999);
 
@@ -75,19 +76,21 @@ export default function Encargues() {
   }, [products]);
 
   const filteredProducts = products.filter((product) => {
+    const matchesSearch = searchTerm
+      ? product.name.toLowerCase().includes(searchTerm)
+      : true;
     const matchesCategory = activeCategory
       ? categories.find((c) => c.slug === activeCategory)?.id === product.category_id
       : true;
     const matchesPrice = product.price_estimate <= maxPrice;
-    return matchesCategory && matchesPrice;
+    return matchesSearch && matchesCategory && matchesPrice;
   });
 
   const handleCategory = (slug: string) => {
-    if (slug === activeCategory) {
-      setSearchParams({});
-    } else {
-      setSearchParams({ categoria: slug });
-    }
+    const newParams: Record<string, string> = {};
+    if (searchTerm) newParams.search = searchTerm;
+    if (slug !== activeCategory) newParams.categoria = slug;
+    setSearchParams(newParams);
   };
 
   const clearFilters = () => {
@@ -95,7 +98,7 @@ export default function Encargues() {
     setSearchParams({});
   };
 
-  const hasActiveFilters = activeCategory || maxPrice < priceRange.max;
+  const hasActiveFilters = activeCategory || searchTerm || maxPrice < priceRange.max;
 
   const buildWhatsAppUrl = (product: CustomProduct) => {
     const msg = encodeURIComponent(
@@ -106,6 +109,26 @@ export default function Encargues() {
 
   const FilterPanel = () => (
     <div className="space-y-8">
+      {/* Search */}
+      <div>
+        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+          Buscar
+        </h3>
+        <Input
+          type="text"
+          value={searchParams.get("search") || ""}
+          onChange={(e) => {
+            const val = e.target.value;
+            const newParams: Record<string, string> = {};
+            if (activeCategory) newParams.categoria = activeCategory;
+            if (val) newParams.search = val;
+            setSearchParams(newParams);
+          }}
+          placeholder="Buscar encargues..."
+          className="font-body text-sm h-10"
+        />
+      </div>
+
       {/* Categories */}
       <div>
         <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
@@ -184,7 +207,9 @@ export default function Encargues() {
       <div className="container py-8">
         {/* Title */}
         <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-4 tracking-wide uppercase">
-          {activeCategory
+          {searchTerm
+            ? `Resultados para: "${searchTerm}"`
+            : activeCategory
             ? categories.find((c) => c.slug === activeCategory)?.name || "Encargues"
             : "Pedidos por Encargue"}
         </h1>
