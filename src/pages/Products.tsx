@@ -221,11 +221,16 @@ export default function Products() {
         <div className="w-12 h-[1px] bg-accent/40 mx-auto mb-10"></div>
 
         {/* Active filter badges (mobile) */}
-        {(activeSize || maxPrice < priceRange.max) && (
+        {(activeSize || activeColor || maxPrice < priceRange.max) && (
           <div className="flex flex-wrap justify-center gap-2 mb-6 md:hidden">
             {activeSize && (
               <span className="text-[10px] bg-secondary px-3 py-1 rounded-full border border-border uppercase font-bold">
                 Talle: {activeSize}
+              </span>
+            )}
+            {activeColor && (
+              <span className="text-[10px] bg-secondary px-3 py-1 rounded-full border border-border uppercase font-bold capitalize">
+                Color: {activeColor}
               </span>
             )}
             {maxPrice < priceRange.max && (
