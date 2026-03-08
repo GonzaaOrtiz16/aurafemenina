@@ -1,16 +1,27 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, ShoppingBag, Search, ChevronDown, X, User } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
-const categorias = [
-  { label: "JEANS", to: "/productos?categoria=jeans" },
-  { label: "REMERAS", to: "/productos?categoria=remeras" },
-  { label: "VESTIDOS", to: "/productos?categoria=vestidos" },
-  { label: "ACCESORIOS", to: "/productos?categoria=accesorios" },
-  { label: "SALE", to: "/productos?categoria=sale" },
+const navLinks = [
+  { label: "INICIO", to: "/" },
+  {
+    label: "PRODUCTOS",
+    to: "/productos",
+    children: [
+      { label: "VER TODO", to: "/productos" },
+      { label: "JEANS", to: "/productos?categoria=jeans" },
+      { label: "REMERAS", to: "/productos?categoria=remeras" },
+      { label: "VESTIDOS", to: "/productos?categoria=vestidos" },
+      { label: "ACCESORIOS", to: "/productos?categoria=accesorios" },
+      { label: "SALE", to: "/productos?categoria=sale" },
+    ],
+  },
+  { label: "POR ENCARGUE", to: "/encargues" },
+  { label: "¿CÓMO COMPRAR?", to: "/como-comprar" },
+  { label: "CONTACTO", to: "/contacto" },
+  { label: "PREGUNTAS FRECUENTES", to: "/preguntas-frecuentes" },
 ];
 
 export default function Header() {
@@ -19,14 +30,22 @@ export default function Header() {
   const location = useLocation();
 
   const [openMenu, setOpenMenu] = useState(false);
-  const [showProductMobileMenu, setShowProductMobileMenu] = useState(false);
   const [showDesktopSearch, setShowDesktopSearch] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileSubmenu, setMobileSubmenu] = useState<string | null>(null);
+  const dropdownTimeout = useRef<ReturnType<typeof setTimeout>>();
 
   useEffect(() => {
-    if (!location.pathname.includes("/productos")) {
-      setSearchTerm("");
-    }
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
+
+  useEffect(() => {
+    if (!location.pathname.includes("/productos")) setSearchTerm("");
+    setActiveDropdown(null);
   }, [location]);
 
   const handleSearch = (e?: React.FormEvent) => {
@@ -37,55 +56,148 @@ export default function Header() {
     }
   };
 
+  const handleDropdownEnter = (label: string) => {
+    if (dropdownTimeout.current) clearTimeout(dropdownTimeout.current);
+    setActiveDropdown(label);
+  };
+
+  const handleDropdownLeave = () => {
+    dropdownTimeout.current = setTimeout(() => setActiveDropdown(null), 200);
+  };
+
   return (
-    <header className="sticky top-0 z-50 w-full bg-card">
-      {/* Top promo bar */}
-      <div className="bg-card border-b border-border py-2 px-4 text-center">
-        <p className="text-[10px] tracking-[0.2em] font-bold text-muted-foreground uppercase">
-          Envíos a todo el país — Aura Femenina
-        </p>
+    <header
+      className={`sticky top-0 z-50 w-full transition-all duration-500 ${
+        scrolled ? "shadow-md" : ""
+      } bg-card`}
+    >
+      {/* Announcement bar */}
+      <div className="bg-foreground text-primary-foreground py-2 px-4 text-center overflow-hidden">
+        <div className="animate-marquee whitespace-nowrap inline-block">
+          <span className="text-[10px] tracking-[0.25em] font-bold uppercase mx-8">
+            ¡Seguinos en Instagram para enterarte de todas las novedades!
+          </span>
+          <span className="text-[10px] tracking-[0.25em] font-bold uppercase mx-8">
+            Envíos a todo el país — Aura Femenina
+          </span>
+          <span className="text-[10px] tracking-[0.25em] font-bold uppercase mx-8">
+            Mínimo de compra $100.000
+          </span>
+          <span className="text-[10px] tracking-[0.25em] font-bold uppercase mx-8">
+            ¡Seguinos en Instagram para enterarte de todas las novedades!
+          </span>
+        </div>
       </div>
 
-      {/* Main nav */}
-      <div className="container mx-auto px-4 h-16 md:h-24 flex items-center justify-between relative border-b md:border-none border-border">
-        {/* Mobile hamburger */}
-        <div className="flex md:hidden items-center flex-1">
-          <Sheet open={openMenu} onOpenChange={setOpenMenu}>
-            <SheetTrigger className="flex items-center gap-2 outline-none">
-              <Menu className="h-6 w-6 text-foreground" />
-              <span className="text-[10px] font-bold text-foreground tracking-widest">MENÚ</span>
-            </SheetTrigger>
-            <SheetContent side="left" className="w-[85%] p-0 flex flex-col">
-              <nav className="flex flex-col mt-10">
-                <Link to="/" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Inicio</Link>
-                <Link to="/productos" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest text-accent">Colección Completa</Link>
-                <Link to="/encargues" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Por Encargue</Link>
-                <Link to="/contacto" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Contacto</Link>
-                <Link to="/login" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Mi Cuenta</Link>
-              </nav>
-            </SheetContent>
-          </Sheet>
+      {/* Main header row: Search — Logo — Account/Cart */}
+      <div className="container mx-auto px-4 h-16 md:h-20 flex items-center justify-between relative">
+        {/* Left: Mobile hamburger / Desktop search */}
+        <div className="flex items-center flex-1">
+          {/* Mobile hamburger */}
+          <div className="md:hidden">
+            <Sheet open={openMenu} onOpenChange={setOpenMenu}>
+              <SheetTrigger className="flex items-center gap-2 outline-none">
+                <Menu className="h-6 w-6 text-foreground" />
+              </SheetTrigger>
+              <SheetContent side="left" className="w-[85%] p-0 flex flex-col overflow-y-auto">
+                <div className="p-6 border-b border-border">
+                  <p className="font-display text-xl font-bold tracking-wider">
+                    AURA<span className="italic text-accent">FEMENINA</span>
+                  </p>
+                </div>
+                <nav className="flex flex-col">
+                  {navLinks.map((link) => (
+                    <div key={link.label}>
+                      {link.children ? (
+                        <>
+                          <button
+                            onClick={() =>
+                              setMobileSubmenu(mobileSubmenu === link.label ? null : link.label)
+                            }
+                            className="w-full flex items-center justify-between p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em]"
+                          >
+                            {link.label}
+                            <ChevronDown
+                              className={`w-4 h-4 transition-transform duration-300 ${
+                                mobileSubmenu === link.label ? "rotate-180" : ""
+                              }`}
+                            />
+                          </button>
+                          <div
+                            className={`overflow-hidden transition-all duration-300 bg-secondary/30 ${
+                              mobileSubmenu === link.label ? "max-h-96" : "max-h-0"
+                            }`}
+                          >
+                            {link.children.map((child) => (
+                              <Link
+                                key={child.to}
+                                to={child.to}
+                                onClick={() => setOpenMenu(false)}
+                                className="block px-8 py-3 text-[11px] font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-foreground transition-colors"
+                              >
+                                {child.label}
+                              </Link>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <Link
+                          to={link.to}
+                          onClick={() => setOpenMenu(false)}
+                          className="p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] block"
+                        >
+                          {link.label}
+                        </Link>
+                      )}
+                    </div>
+                  ))}
+                  <Link
+                    to="/login"
+                    onClick={() => setOpenMenu(false)}
+                    className="p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent"
+                  >
+                    MI CUENTA
+                  </Link>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
+
+          {/* Desktop search trigger */}
+          <button
+            className="hidden md:flex items-center gap-2 group"
+            onClick={() => setShowDesktopSearch(true)}
+          >
+            <Search className="h-5 w-5 text-foreground group-hover:text-accent transition-colors" />
+          </button>
         </div>
 
-        {/* Logo */}
+        {/* Center: Logo */}
         <div className="flex-[2] md:flex-none text-center">
-          <Link to="/" className="text-xl md:text-3xl font-black italic tracking-tighter text-foreground uppercase">
+          <Link
+            to="/"
+            className="text-xl md:text-3xl font-black tracking-tighter text-foreground uppercase inline-block hover:opacity-80 transition-opacity"
+          >
             AURA<span className="font-display italic text-accent font-bold">FEMENINA</span>
           </Link>
         </div>
 
-        {/* Right icons */}
-        <div className="flex flex-1 md:flex-none items-center justify-end gap-2 md:gap-5">
-          <Link to="/login" className="hidden md:block p-2">
-            <User className="h-5 w-5 text-foreground" />
+        {/* Right: Account + Cart */}
+        <div className="flex flex-1 items-center justify-end gap-3 md:gap-5">
+          <Link to="/registro" className="hidden md:block">
+            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+              CREAR CUENTA
+            </span>
           </Link>
-          <button className="hidden md:block p-2" onClick={() => setShowDesktopSearch(true)}>
-            <Search className="h-5 w-5 text-foreground" />
-          </button>
+          <Link to="/login" className="hidden md:block">
+            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">
+              INICIAR SESIÓN
+            </span>
+          </Link>
           <Link to="/carrito" className="relative p-2">
-            <ShoppingBag className="h-6 w-6 text-foreground" />
+            <ShoppingBag className="h-5 w-5 text-foreground" />
             {itemCount > 0 && (
-              <span className="absolute top-0 right-0 h-4 w-4 bg-foreground text-background text-[8px] rounded-full flex items-center justify-center font-bold">
+              <span className="absolute -top-0.5 -right-0.5 h-4 w-4 bg-accent text-accent-foreground text-[8px] rounded-full flex items-center justify-center font-bold">
                 {itemCount}
               </span>
             )}
@@ -94,27 +206,78 @@ export default function Header() {
 
         {/* Desktop search overlay */}
         {showDesktopSearch && (
-          <div className="absolute inset-0 bg-card z-[60] flex items-center px-12 animate-in slide-in-from-top duration-300">
+          <div className="absolute inset-0 bg-card z-[60] flex items-center px-12 animate-fade-in">
             <form onSubmit={handleSearch} className="w-full flex items-center gap-4">
               <Search className="w-6 h-6 text-muted-foreground" />
               <input
                 autoFocus
                 type="text"
                 placeholder="¿Qué estás buscando?"
-                className="w-full text-2xl font-light outline-none bg-transparent"
+                className="w-full text-2xl font-light outline-none bg-transparent font-display"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
               <button type="button" onClick={() => setShowDesktopSearch(false)}>
-                <X className="w-8 h-8 text-muted-foreground" />
+                <X className="w-8 h-8 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
             </form>
           </div>
         )}
       </div>
 
-      {/* Mobile sub-bar: Search + Products dropdown */}
-      <div className="md:hidden sticky top-0 left-0 w-full flex h-14 z-40 bg-card border-b border-border shadow-sm">
+      {/* Desktop navigation bar with dropdowns */}
+      <nav className="hidden md:block border-t border-border">
+        <div className="container mx-auto flex items-center justify-center gap-0">
+          {navLinks.map((link) => (
+            <div
+              key={link.label}
+              className="relative"
+              onMouseEnter={() => link.children && handleDropdownEnter(link.label)}
+              onMouseLeave={() => link.children && handleDropdownLeave()}
+            >
+              <Link
+                to={link.to}
+                className={`relative flex items-center gap-1 px-5 py-4 font-body text-[11px] font-bold uppercase tracking-[0.15em] transition-colors hover:text-accent ${
+                  location.pathname === link.to
+                    ? "text-accent after:absolute after:bottom-0 after:left-5 after:right-5 after:h-[2px] after:bg-accent"
+                    : "text-foreground"
+                }`}
+              >
+                {link.label}
+                {link.children && (
+                  <ChevronDown
+                    className={`w-3 h-3 transition-transform duration-300 ${
+                      activeDropdown === link.label ? "rotate-180" : ""
+                    }`}
+                  />
+                )}
+              </Link>
+
+              {/* Dropdown panel */}
+              {link.children && activeDropdown === link.label && (
+                <div
+                  className="absolute top-full left-0 min-w-[220px] bg-card shadow-xl border border-border z-50 animate-fade-in"
+                  onMouseEnter={() => handleDropdownEnter(link.label)}
+                  onMouseLeave={handleDropdownLeave}
+                >
+                  {link.children.map((child) => (
+                    <Link
+                      key={child.to}
+                      to={child.to}
+                      className="block px-6 py-3 font-body text-[11px] font-bold uppercase tracking-[0.1em] text-foreground/70 hover:text-accent hover:bg-secondary/50 transition-all duration-200"
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
+      </nav>
+
+      {/* Mobile sub-bar */}
+      <div className="md:hidden flex h-12 z-40 bg-card border-t border-border">
         <form onSubmit={handleSearch} className="flex-1 flex items-center border-r border-border px-4">
           <input
             type="text"
@@ -123,32 +286,16 @@ export default function Header() {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          <button type="submit"><Search className="w-4 h-4 text-muted-foreground/40" /></button>
-        </form>
-
-        <div className="flex-[1.2] relative">
-          <button
-            onClick={() => setShowProductMobileMenu(!showProductMobileMenu)}
-            className="w-full h-full flex items-center justify-between px-4 text-[10px] font-bold uppercase tracking-widest"
-          >
-            PRODUCTOS <ChevronDown className={`w-3 h-3 transition-transform ${showProductMobileMenu ? "rotate-180" : ""}`} />
+          <button type="submit">
+            <Search className="w-4 h-4 text-muted-foreground/40" />
           </button>
-
-          {showProductMobileMenu && (
-            <div className="absolute top-full left-0 w-full bg-card shadow-2xl z-50 border-t border-border">
-              {categorias.map((cat) => (
-                <Link
-                  key={cat.to}
-                  to={cat.to}
-                  onClick={() => setShowProductMobileMenu(false)}
-                  className="block px-6 py-4 text-[11px] font-bold border-b border-border/50 uppercase tracking-[0.1em]"
-                >
-                  {cat.label}
-                </Link>
-              ))}
-            </div>
-          )}
-        </div>
+        </form>
+        <Link
+          to="/productos"
+          className="flex-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-accent transition-colors"
+        >
+          PRODUCTOS
+        </Link>
       </div>
     </header>
   );
