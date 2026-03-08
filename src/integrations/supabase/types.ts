@@ -35,6 +35,39 @@ export type Database = {
         }
         Relationships: []
       }
+      custom_products: {
+        Row: {
+          created_at: string
+          description: string | null
+          estimated_days: string | null
+          id: string
+          images: string[]
+          name: string
+          price_estimate: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          estimated_days?: string | null
+          id?: string
+          images?: string[]
+          name: string
+          price_estimate?: number
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          estimated_days?: string | null
+          id?: string
+          images?: string[]
+          name?: string
+          price_estimate?: number
+          slug?: string
+        }
+        Relationships: []
+      }
       products: {
         Row: {
           category_id: string | null
@@ -87,6 +120,30 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string
+          id: string
+          newsletter_opt_in: boolean
+          phone: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string
+          id: string
+          newsletter_opt_in?: boolean
+          phone?: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string
+          id?: string
+          newsletter_opt_in?: boolean
+          phone?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

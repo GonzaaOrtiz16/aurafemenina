@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, ShoppingBag, Search, ChevronDown, X } from "lucide-react";
+import { Menu, ShoppingBag, Search, ChevronDown, X, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
@@ -58,7 +59,9 @@ export default function Header() {
               <nav className="flex flex-col mt-10">
                 <Link to="/" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Inicio</Link>
                 <Link to="/productos" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest text-accent">Colección Completa</Link>
+                <Link to="/encargues" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Por Encargue</Link>
                 <Link to="/contacto" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Contacto</Link>
+                <Link to="/login" onClick={() => setOpenMenu(false)} className="p-6 border-b border-border font-bold uppercase text-xs tracking-widest">Mi Cuenta</Link>
               </nav>
             </SheetContent>
           </Sheet>
@@ -73,6 +76,9 @@ export default function Header() {
 
         {/* Right icons */}
         <div className="flex flex-1 md:flex-none items-center justify-end gap-2 md:gap-5">
+          <Link to="/login" className="hidden md:block p-2">
+            <User className="h-5 w-5 text-foreground" />
+          </Link>
           <button className="hidden md:block p-2" onClick={() => setShowDesktopSearch(true)}>
             <Search className="h-5 w-5 text-foreground" />
           </button>
