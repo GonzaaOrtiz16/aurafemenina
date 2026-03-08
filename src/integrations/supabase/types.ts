@@ -37,6 +37,7 @@ export type Database = {
       }
       custom_products: {
         Row: {
+          category_id: string | null
           created_at: string
           description: string | null
           estimated_days: string | null
@@ -47,6 +48,7 @@ export type Database = {
           slug: string
         }
         Insert: {
+          category_id?: string | null
           created_at?: string
           description?: string | null
           estimated_days?: string | null
@@ -57,6 +59,7 @@ export type Database = {
           slug: string
         }
         Update: {
+          category_id?: string | null
           created_at?: string
           description?: string | null
           estimated_days?: string | null
@@ -64,6 +67,35 @@ export type Database = {
           images?: string[]
           name?: string
           price_estimate?: number
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "custom_products_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "encargue_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      encargue_categories: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
           slug?: string
         }
         Relationships: []
