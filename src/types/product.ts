@@ -1,3 +1,9 @@
+export interface ProductColorVariant {
+  nombre: string;
+  hex: string;
+  sizes: Record<string, number>; // size → stock
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -6,10 +12,9 @@ export interface Product {
   originalPrice?: number;
   category: string;
   categorySlug: string;
-  sizes: string[];
+  sizes: string[]; // all available sizes (derived)
   images: string[];
-  // Agregamos la definición de colores aquí
-  colores?: { nombre: string, hex: string }[]; 
+  colores?: ProductColorVariant[];
   description: string;
   featured?: boolean;
   isNew?: boolean;

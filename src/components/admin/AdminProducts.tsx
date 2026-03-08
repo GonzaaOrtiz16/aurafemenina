@@ -10,6 +10,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
+interface ColorVariant {
+  nombre: string;
+  hex: string;
+  sizes: Record<string, number>;
+}
+
 interface DbProduct {
   id: string;
   name: string;
@@ -20,7 +26,7 @@ interface DbProduct {
   category_id: string | null;
   sizes: Record<string, number>;
   images: string[];
-  colores?: { nombre: string; hex: string }[];
+  colores?: ColorVariant[];
   featured: boolean;
 }
 
@@ -46,8 +52,7 @@ export default function AdminProducts() {
   const [form, setForm] = useState({
     name: "", slug: "", description: "", price: "", original_price: "",
     category_id: "", featured: false, images: [] as string[],
-    colores: [] as { nombre: string; hex: string }[],
-    sizes: {} as Record<string, number>,
+    colores: [] as ColorVariant[],
   });
 
   useEffect(() => { fetchData(); }, []);
@@ -68,17 +73,23 @@ export default function AdminProducts() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", description: "", price: "", original_price: "", category_id: "", featured: false, images: [], colores: [], sizes: {} });
+    setForm({ name: "", slug: "", description: "", price: "", original_price: "", category_id: "", featured: false, images: [], colores: [] });
     setDialogOpen(true);
   };
 
   const openEdit = (p: DbProduct) => {
     setEditing(p);
+    // Migrate old format: if colores don't have sizes, merge from product.sizes
+    const migratedColores = (p.colores || []).map((c: any) => ({
+      nombre: c.nombre || "",
+      hex: c.hex || "#000000",
+      sizes: c.sizes && Object.keys(c.sizes).length > 0 ? c.sizes : { ...p.sizes },
+    }));
     setForm({
       name: p.name, slug: p.slug, description: p.description || "",
       price: String(p.price), original_price: p.original_price ? String(p.original_price) : "",
       category_id: p.category_id || "", featured: p.featured,
-      images: p.images || [], colores: p.colores || [], sizes: p.sizes || {},
+      images: p.images || [], colores: migratedColores,
     });
     setDialogOpen(true);
   };
@@ -110,12 +121,20 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     const slug = form.slug || generateSlug(form.name);
+    // Build aggregated sizes from all color variants
+    const aggregatedSizes: Record<string, number> = {};
+    form.colores.forEach((c) => {
+      Object.entries(c.sizes).forEach(([size, stock]) => {
+        aggregatedSizes[size] = (aggregatedSizes[size] || 0) + stock;
+      });
+    });
+
     const payload: any = {
       name: form.name, slug, description: form.description || null,
       price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
       category_id: form.category_id || null, featured: form.featured,
-      images: form.images, colores: form.colores, sizes: form.sizes,
+      images: form.images, colores: form.colores, sizes: aggregatedSizes,
     };
 
     if (editing) {
@@ -139,20 +158,37 @@ export default function AdminProducts() {
     fetchData();
   };
 
-  const addColorField = () => setForm({ ...form, colores: [...form.colores, { nombre: "", hex: "#000000" }] });
-  const removeColorField = (idx: number) => setForm({ ...form, colores: form.colores.filter((_, i) => i !== idx) });
-  const toggleSize = (size: string) => {
-    setForm((prev) => {
-      const newSizes = { ...prev.sizes };
-      if (size in newSizes) delete newSizes[size]; else newSizes[size] = 10;
-      return { ...prev, sizes: newSizes };
-    });
+  // Color variant management
+  const addColor = () => setForm({ ...form, colores: [...form.colores, { nombre: "", hex: "#000000", sizes: {} }] });
+  const removeColor = (idx: number) => setForm({ ...form, colores: form.colores.filter((_, i) => i !== idx) });
+  const updateColorField = (idx: number, field: "nombre" | "hex", value: string) => {
+    const c = [...form.colores];
+    c[idx] = { ...c[idx], [field]: value };
+    setForm({ ...form, colores: c });
   };
-  const updateStock = (size: string, stock: number) => {
-    setForm((prev) => ({ ...prev, sizes: { ...prev.sizes, [size]: stock } }));
+  const toggleSizeForColor = (colorIdx: number, size: string) => {
+    const c = [...form.colores];
+    const newSizes = { ...c[colorIdx].sizes };
+    if (size in newSizes) delete newSizes[size]; else newSizes[size] = 1;
+    c[colorIdx] = { ...c[colorIdx], sizes: newSizes };
+    setForm({ ...form, colores: c });
+  };
+  const updateStockForColor = (colorIdx: number, size: string, stock: number) => {
+    const c = [...form.colores];
+    c[colorIdx] = { ...c[colorIdx], sizes: { ...c[colorIdx].sizes, [size]: stock } };
+    setForm({ ...form, colores: c });
   };
 
   const getCategoryName = (id: string | null) => categories.find((c) => c.id === id)?.name || "-";
+  const getTotalStock = (p: DbProduct) => {
+    if (p.colores && p.colores.length > 0) {
+      return p.colores.reduce((sum, c: any) => {
+        if (!c.sizes) return sum;
+        return sum + Object.values(c.sizes as Record<string, number>).reduce((a, b) => a + b, 0);
+      }, 0);
+    }
+    return p.sizes ? Object.values(p.sizes).reduce((a, b) => a + b, 0) : 0;
+  };
 
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
@@ -194,6 +230,7 @@ export default function AdminProducts() {
               <tr className="border-b border-border bg-secondary">
                 <th className="text-left p-3 font-medium">Producto</th>
                 <th className="text-left p-3 font-medium hidden md:table-cell">Categoría</th>
+                <th className="text-right p-3 font-medium hidden md:table-cell">Stock</th>
                 <th className="text-right p-3 font-medium">Precio</th>
                 <th className="text-right p-3 font-medium">Acciones</th>
               </tr>
@@ -206,11 +243,17 @@ export default function AdminProducts() {
                       {p.images?.[0] && <img src={p.images[0]} alt="" className="h-10 w-8 object-cover rounded-sm bg-secondary flex-shrink-0" />}
                       <div>
                         <span className="font-medium truncate max-w-[150px] block">{p.name}</span>
-                        {p.featured && <span className="text-[10px] text-accent font-bold">★ Destacado</span>}
+                        <div className="flex items-center gap-1 mt-0.5">
+                          {p.featured && <span className="text-[10px] text-accent font-bold">★ Destacado</span>}
+                          {(p.colores || []).map((c: any, i: number) => (
+                            <div key={i} className="w-3 h-3 rounded-full border border-border" style={{ backgroundColor: c.hex }} title={c.nombre} />
+                          ))}
+                        </div>
                       </div>
                     </div>
                   </td>
                   <td className="p-3 hidden md:table-cell text-muted-foreground">{getCategoryName(p.category_id)}</td>
+                  <td className="p-3 text-right hidden md:table-cell text-muted-foreground">{getTotalStock(p)} u.</td>
                   <td className="p-3 text-right">
                     <div>
                       <span className="font-semibold">{formatPrice(Number(p.price))}</span>
@@ -304,46 +347,81 @@ export default function AdminProducts() {
               </div>
             </div>
 
-            {/* Colors */}
-            <div className="space-y-3 border-t pt-4">
+            {/* Colors + Sizes + Stock */}
+            <div className="space-y-4 border-t pt-4">
               <div className="flex items-center justify-between">
-                <label className="text-sm font-medium flex items-center gap-2"><Palette className="h-4 w-4" /> Colores disponibles</label>
-                <Button type="button" variant="ghost" size="sm" onClick={addColorField} className="text-xs">+ Añadir</Button>
+                <label className="text-sm font-medium flex items-center gap-2"><Palette className="h-4 w-4" /> Colores, Talles y Stock</label>
+                <Button type="button" variant="outline" size="sm" onClick={addColor} className="text-xs gap-1"><Plus className="h-3 w-3" /> Color</Button>
               </div>
-              {form.colores.map((color, idx) => (
-                <div key={idx} className="flex gap-2 items-center bg-secondary/40 p-2 rounded-md">
-                  <Input placeholder="Nombre (ej: Blanco)" value={color.nombre}
-                    onChange={(e) => { const c = [...form.colores]; c[idx].nombre = e.target.value; setForm({ ...form, colores: c }); }}
-                    className="h-8 text-xs" />
-                  <Input type="color" value={color.hex}
-                    onChange={(e) => { const c = [...form.colores]; c[idx].hex = e.target.value; setForm({ ...form, colores: c }); }}
-                    className="w-12 h-8 p-1 cursor-pointer border-none bg-transparent" />
-                  <Button variant="ghost" size="icon" onClick={() => removeColorField(idx)} className="h-8 w-8 text-destructive"><X className="h-4 w-4" /></Button>
-                </div>
-              ))}
-            </div>
+              <p className="text-[10px] text-muted-foreground -mt-2">Cada color tiene sus propios talles y stock. Al elegir un color en la tienda, solo se muestran los talles disponibles para ese color.</p>
 
-            {/* Sizes */}
-            <div className="border-t pt-4">
-              <label className="text-sm font-medium mb-3 block">Talles y Stock</label>
-              <div className="flex flex-wrap gap-2 mb-4">
-                {SIZES.map((s) => (
-                  <button key={s} type="button" onClick={() => toggleSize(s)}
-                    className={`px-3 py-1 rounded-md border text-xs transition-all ${s in form.sizes ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary"}`}>
-                    {s}
-                  </button>
-                ))}
-              </div>
-              {Object.keys(form.sizes).length > 0 && (
-                <div className="grid grid-cols-3 gap-3 bg-secondary/20 p-3 rounded-md">
-                  {Object.entries(form.sizes).map(([size, stock]) => (
-                    <div key={size} className="flex flex-col gap-1">
-                      <span className="text-[10px] font-bold uppercase">{size}</span>
-                      <Input type="number" value={stock} onChange={(e) => updateStock(size, Number(e.target.value))} className="h-8 text-xs" />
-                    </div>
-                  ))}
+              {form.colores.length === 0 && (
+                <div className="py-4 border-2 border-dashed border-border rounded-md text-center text-xs text-muted-foreground">
+                  Agregá al menos un color con sus talles y stock.
                 </div>
               )}
+
+              {form.colores.map((color, cIdx) => (
+                <div key={cIdx} className="border border-border rounded-md p-4 bg-card space-y-3">
+                  {/* Color header */}
+                  <div className="flex gap-2 items-center">
+                    <Input
+                      placeholder="Nombre del color (ej: Rojo)"
+                      value={color.nombre}
+                      onChange={(e) => updateColorField(cIdx, "nombre", e.target.value)}
+                      className="h-8 text-xs flex-1"
+                    />
+                    <Input
+                      type="color"
+                      value={color.hex}
+                      onChange={(e) => updateColorField(cIdx, "hex", e.target.value)}
+                      className="w-12 h-8 p-1 cursor-pointer border-none bg-transparent"
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => removeColor(cIdx)} className="h-8 w-8 text-destructive flex-shrink-0">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Size toggles for this color */}
+                  <div>
+                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Talles para {color.nombre || "este color"}</p>
+                    <div className="flex flex-wrap gap-1.5">
+                      {SIZES.map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => toggleSizeForColor(cIdx, s)}
+                          className={`px-2.5 py-1 rounded-md border text-[10px] font-bold transition-all ${
+                            s in color.sizes
+                              ? "bg-foreground text-background border-foreground"
+                              : "border-border hover:bg-secondary text-muted-foreground"
+                          }`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Stock per size for this color */}
+                  {Object.keys(color.sizes).length > 0 && (
+                    <div className="grid grid-cols-3 gap-2 bg-secondary/30 p-2 rounded-md">
+                      {Object.entries(color.sizes).map(([size, stock]) => (
+                        <div key={size} className="flex flex-col gap-0.5">
+                          <span className="text-[9px] font-bold uppercase text-muted-foreground">{size}</span>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={stock}
+                            onChange={(e) => updateStockForColor(cIdx, size, Number(e.target.value))}
+                            className="h-7 text-xs"
+                          />
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              ))}
             </div>
 
             <Button onClick={handleSave} disabled={uploading} className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg rounded-md">
