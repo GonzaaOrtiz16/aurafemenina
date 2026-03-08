@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, ShoppingBag, Search, ChevronDown, X } from "lucide-react";
+import { Menu, ShoppingBag, Search, ChevronDown, X, User } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
