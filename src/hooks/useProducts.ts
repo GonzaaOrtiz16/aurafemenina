@@ -8,11 +8,12 @@ interface DbProduct {
   slug: string;
   description: string | null;
   price: number;
+  original_price: number | null;
   category_id: string | null;
   sizes: Record<string, number>;
   images: string[];
   featured: boolean;
-  colores?: any; // Agregamos la columna que faltaba
+  colores?: any;
   created_at: string;
   updated_at: string;
 }
