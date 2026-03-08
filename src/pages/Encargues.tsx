@@ -188,7 +188,9 @@ export default function Encargues() {
       <div className="container py-8">
         {/* Title */}
         <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-4 tracking-wide uppercase">
-          {activeCategory
+          {searchTerm
+            ? `Resultados para: "${searchTerm}"`
+            : activeCategory
             ? categories.find((c) => c.slug === activeCategory)?.name || "Encargues"
             : "Pedidos por Encargue"}
         </h1>
