@@ -76,11 +76,12 @@ export default function Products() {
 
   const clearFilters = () => {
     setActiveSize("");
+    setActiveColor("");
     setMaxPrice(priceRange.max);
     setSearchParams({});
   };
 
-  const hasActiveFilters = activeSize || maxPrice < priceRange.max || activeCategory || searchTerm;
+  const hasActiveFilters = activeSize || activeColor || maxPrice < priceRange.max || activeCategory || searchTerm;
 
   // Sidebar filter panel (shared between mobile & desktop)
   const FilterPanel = () => (
