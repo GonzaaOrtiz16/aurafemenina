@@ -20,7 +20,6 @@ export default function HeroSection() {
           className={`w-full h-full object-contain md:object-cover object-[65%_center] transition-transform duration-[2000ms] ease-out ${
             loaded ? "scale-100" : "scale-105"
           }`}
-          }`}
           loading="eager"
         />
         {/* Gradient overlay */}
