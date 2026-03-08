@@ -50,9 +50,9 @@ export default function Footer() {
                 <Instagram className="h-4 w-4" /> {c.instagram}
               </a>
               {c.location && (
-                <span className="flex items-center gap-2">
+                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(c.location)}`} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
                   <MapPin className="h-4 w-4" /> {c.location}
-                </span>
+                </a>
               )}
             </div>
           </div>
