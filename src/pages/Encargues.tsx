@@ -99,7 +99,7 @@ export default function Encargues() {
     setSearchParams({});
   };
 
-  const hasActiveFilters = activeCategory || maxPrice < priceRange.max;
+  const hasActiveFilters = activeCategory || searchTerm || maxPrice < priceRange.max;
 
   const buildWhatsAppUrl = (product: CustomProduct) => {
     const msg = encodeURIComponent(
