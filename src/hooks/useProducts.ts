@@ -8,11 +8,12 @@ interface DbProduct {
   slug: string;
   description: string | null;
   price: number;
+  original_price: number | null;
   category_id: string | null;
   sizes: Record<string, number>;
   images: string[];
   featured: boolean;
-  colores?: any; // Agregamos la columna que faltaba
+  colores?: any;
   created_at: string;
   updated_at: string;
 }
@@ -29,14 +30,13 @@ function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: 
     name: p.name,
     slug: p.slug,
     price: Number(p.price),
+    originalPrice: p.original_price ? Number(p.original_price) : undefined,
     category: categoryName || "",
     categorySlug: categorySlug || "",
-    // Mantenemos la lógica de talles para que no rompa
     sizes: p.sizes ? Object.keys(p.sizes) : [],
     images: p.images || [],
     description: p.description || "",
     featured: p.featured,
-    // PASAMOS LOS COLORES A LA WEB
     colores: p.colores || [], 
   };
 }
