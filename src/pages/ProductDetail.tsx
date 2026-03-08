@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import { useProductBySlug } from "@/hooks/useProducts";
@@ -6,9 +6,10 @@ import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/shipping";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShoppingBag, ChevronLeft, ChevronRight, ZoomIn } from "lucide-react";
+import { ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductColorVariant } from "@/types/product";
+import useEmblaCarousel from "embla-carousel-react";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
