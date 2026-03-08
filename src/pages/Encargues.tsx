@@ -76,11 +76,14 @@ export default function Encargues() {
   }, [products]);
 
   const filteredProducts = products.filter((product) => {
+    const matchesSearch = searchTerm
+      ? product.name.toLowerCase().includes(searchTerm)
+      : true;
     const matchesCategory = activeCategory
       ? categories.find((c) => c.slug === activeCategory)?.id === product.category_id
       : true;
     const matchesPrice = product.price_estimate <= maxPrice;
-    return matchesCategory && matchesPrice;
+    return matchesSearch && matchesCategory && matchesPrice;
   });
 
   const handleCategory = (slug: string) => {
