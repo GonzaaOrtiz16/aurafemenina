@@ -55,7 +55,13 @@ export default function Products() {
 
     const matchesPrice = product.price <= maxPrice;
 
-    return matchesSearch && matchesSize && matchesPrice;
+    const matchesColor = activeColor
+      ? ((product.colores || []) as Array<{ nombre?: string }>).some(
+          (c) => c.nombre?.toLowerCase() === activeColor.toLowerCase()
+        )
+      : true;
+
+    return matchesSearch && matchesSize && matchesPrice && matchesColor;
   });
 
   const handleCategory = (slug: string) => {
