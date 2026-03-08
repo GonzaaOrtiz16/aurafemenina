@@ -1,4 +1,5 @@
-import type { ShippingResult, CartItem, ShippingZone } from "@/types/product";
+import type { ShippingResult, CartItem } from "@/types/product";
+import type { ShippingZone } from "@/types/product";
 
 // Zona sur de Buenos Aires: Avellaneda, Lanús, Lomas de Zamora, Quilmes, Berazategui, etc.
 const ZONA_SUR_CP_RANGES: [number, number][] = [
