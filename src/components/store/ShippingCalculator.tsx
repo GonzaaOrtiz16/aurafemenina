@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { calcularEnvio, formatPrice, getShippingZone, MINIMUM_PURCHASE, ZONE_LABELS } from "@/lib/shipping";
-import { ShippingResult, ShippingZone } from "@/types/product";
+import type { ShippingResult, ShippingZone } from "@/types/product";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Truck, AlertTriangle, CheckCircle } from "lucide-react";
