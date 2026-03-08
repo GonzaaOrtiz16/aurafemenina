@@ -60,6 +60,7 @@ interface ContactData {
 export default function Encargues() {
   const [searchParams, setSearchParams] = useSearchParams();
   const activeCategory = searchParams.get("categoria") || "";
+  const searchTerm = searchParams.get("search")?.toLowerCase() || "";
 
   const [maxPrice, setMaxPrice] = useState(999999);
 
