@@ -10,6 +10,7 @@ import { ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductColorVariant } from "@/types/product";
 import useEmblaCarousel from "embla-carousel-react";
+import ZoomableImage from "@/components/store/ZoomableImage";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -137,11 +138,19 @@ export default function ProductDetail() {
                     key={idx}
                     className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center bg-white"
                   >
-                    <img
+                    <ZoomableImage
                       src={img}
                       alt={`${product.name} ${idx + 1}`}
-                      className="h-full w-full object-cover"
-                      draggable={false}
+                      onZoomChange={(zoomed) => {
+                        if (emblaApi) {
+                          // Disable carousel drag when zoomed in
+                          if (zoomed) {
+                            emblaApi.reInit({ watchDrag: false });
+                          } else {
+                            emblaApi.reInit({ watchDrag: true });
+                          }
+                        }
+                      }}
                     />
                   </div>
                 ))}
