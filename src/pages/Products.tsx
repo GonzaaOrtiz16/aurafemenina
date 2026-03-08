@@ -140,6 +140,32 @@ export default function Products() {
         </div>
       </div>
 
+      {/* Colors */}
+      {availableColors.length > 0 && (
+        <div>
+          <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+            Color
+          </h3>
+          <div className="flex flex-wrap gap-3">
+            {availableColors.map((color) => (
+              <button
+                key={color.nombre}
+                onClick={() => setActiveColor(activeColor === color.nombre ? "" : color.nombre)}
+                title={color.nombre}
+                className={`w-8 h-8 rounded-full border-2 transition-all p-[2px] ${
+                  activeColor === color.nombre ? "border-foreground scale-110" : "border-transparent"
+                }`}
+              >
+                <div className="w-full h-full rounded-full border border-border/30" style={{ backgroundColor: color.hex }} />
+              </button>
+            ))}
+          </div>
+          {activeColor && (
+            <p className="font-body text-xs text-muted-foreground mt-2 capitalize">{activeColor}</p>
+          )}
+        </div>
+      )}
+
       {/* Price Range */}
       <div>
         <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
