@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, TouchEvent as ReactTouchEvent } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, Link } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import { useProductBySlug } from "@/hooks/useProducts";
