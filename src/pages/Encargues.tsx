@@ -110,6 +110,26 @@ export default function Encargues() {
 
   const FilterPanel = () => (
     <div className="space-y-8">
+      {/* Search */}
+      <div>
+        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
+          Buscar
+        </h3>
+        <Input
+          type="text"
+          value={searchParams.get("search") || ""}
+          onChange={(e) => {
+            const val = e.target.value;
+            const newParams: Record<string, string> = {};
+            if (activeCategory) newParams.categoria = activeCategory;
+            if (val) newParams.search = val;
+            setSearchParams(newParams);
+          }}
+          placeholder="Buscar encargues..."
+          className="font-body text-sm h-10"
+        />
+      </div>
+
       {/* Categories */}
       <div>
         <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
