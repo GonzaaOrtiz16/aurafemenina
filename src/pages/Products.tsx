@@ -3,7 +3,7 @@ import Layout from "@/components/store/Layout";
 import ProductCard from "@/components/store/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { X } from "lucide-react";
 import { useMemo, useState } from "react";
 
