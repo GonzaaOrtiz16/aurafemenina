@@ -5,7 +5,7 @@ import { useEffect, useState, useCallback } from "react";
 const benefits = [
   { icon: Truck, title: "ENVÍOS", subtitle: "¡Hacemos envíos a todo el país!" },
   { icon: MessageCircle, title: "ESCRIBINOS!", subtitle: "WhatsApp: 1134944228" },
-  { icon: Tag, title: "MARCA MAYORISTA", subtitle: "Mínimo de compra $ 100.000" },
+  { icon: Tag, title: "COMPRA MÍNIMA", subtitle: "$100.000 para GBA e Interior. Sin mínimo en CABA y Zona Sur." },
 ];
 
 function BenefitsCarousel() {
@@ -91,7 +91,7 @@ export default function StoreInfo() {
           <div className="hidden md:grid md:grid-cols-3 gap-16">
             <AnimatedCard icon={Truck} title="ENVÍOS" subtitle="¡Hacemos envíos a todo el país!" delay={0} />
             <AnimatedCard icon={MessageCircle} title="ESCRIBINOS!" subtitle="WhatsApp: 1134944228" delay={150} />
-            <AnimatedCard icon={Tag} title="MARCA MAYORISTA" subtitle="Mínimo de compra $ 100.000" delay={300} />
+            <AnimatedCard icon={Tag} title="COMPRA MÍNIMA" subtitle="$100.000 para GBA e Interior. Sin mínimo en CABA y Zona Sur." delay={300} />
           </div>
 
           {/* Mobile: auto carousel */}
