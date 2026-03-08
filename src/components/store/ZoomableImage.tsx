@@ -12,13 +12,16 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
   const [translate, setTranslate] = useState({ x: 0, y: 0 });
   const [isZoomed, setIsZoomed] = useState(false);
 
-  // Touch state refs (avoid re-renders during gestures)
   const lastDistance = useRef(0);
   const lastCenter = useRef({ x: 0, y: 0 });
   const startTranslate = useRef({ x: 0, y: 0 });
   const isPinching = useRef(false);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
+
+  // Desktop mouse drag state
+  const isMouseDragging = useRef(false);
+  const mouseDragStart = useRef({ x: 0, y: 0 });
 
   const MAX_SCALE = 3;
   const MIN_SCALE = 1;
@@ -36,6 +39,14 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
     };
   }, []);
 
+  const updateZoomState = useCallback((newScale: number) => {
+    const zoomed = newScale > 1.05;
+    if (zoomed !== isZoomed) {
+      setIsZoomed(zoomed);
+      onZoomChange?.(zoomed);
+    }
+  }, [isZoomed, onZoomChange]);
+
   const resetZoom = useCallback(() => {
     setScale(1);
     setTranslate({ x: 0, y: 0 });
@@ -43,6 +54,42 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
     onZoomChange?.(false);
   }, [onZoomChange]);
 
+  // ── Desktop: scroll wheel zoom ──
+  const handleWheel = useCallback((e: React.WheelEvent) => {
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    const newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, scale * delta));
+    const newT = clampTranslate(translate.x, translate.y, newScale);
+    setScale(newScale);
+    setTranslate(newT);
+    updateZoomState(newScale);
+    if (newScale < 1.1 && delta < 1) {
+      resetZoom();
+    }
+  }, [scale, translate, clampTranslate, updateZoomState, resetZoom]);
+
+  // ── Desktop: mouse drag to pan ──
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    if (scale <= 1) return;
+    e.preventDefault();
+    isMouseDragging.current = true;
+    mouseDragStart.current = { x: e.clientX, y: e.clientY };
+    startTranslate.current = { ...translate };
+  }, [scale, translate]);
+
+  const handleMouseMove = useCallback((e: React.MouseEvent) => {
+    if (!isMouseDragging.current || scale <= 1) return;
+    const dx = e.clientX - mouseDragStart.current.x;
+    const dy = e.clientY - mouseDragStart.current.y;
+    const newT = clampTranslate(startTranslate.current.x + dx, startTranslate.current.y + dy, scale);
+    setTranslate(newT);
+  }, [scale, clampTranslate]);
+
+  const handleMouseUp = useCallback(() => {
+    isMouseDragging.current = false;
+  }, []);
+
+  // ── Touch: pinch & pan ──
   const getDistance = (t1: React.Touch, t2: React.Touch) =>
     Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
 
@@ -77,20 +124,11 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
 
       const dx = center.x - lastCenter.current.x;
       const dy = center.y - lastCenter.current.y;
-      const newT = clampTranslate(
-        startTranslate.current.x + dx,
-        startTranslate.current.y + dy,
-        newScale
-      );
+      const newT = clampTranslate(startTranslate.current.x + dx, startTranslate.current.y + dy, newScale);
 
       setScale(newScale);
       setTranslate(newT);
-
-      const zoomed = newScale > 1.05;
-      if (zoomed !== isZoomed) {
-        setIsZoomed(zoomed);
-        onZoomChange?.(zoomed);
-      }
+      updateZoomState(newScale);
 
       lastDistance.current = dist;
       lastCenter.current = center;
@@ -99,34 +137,27 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
       e.preventDefault();
       const dx = e.touches[0].clientX - panStart.current.x;
       const dy = e.touches[0].clientY - panStart.current.y;
-      const newT = clampTranslate(
-        startTranslate.current.x + dx,
-        startTranslate.current.y + dy,
-        scale
-      );
+      const newT = clampTranslate(startTranslate.current.x + dx, startTranslate.current.y + dy, scale);
       setTranslate(newT);
     }
-  }, [scale, isZoomed, clampTranslate, onZoomChange]);
+  }, [scale, clampTranslate, updateZoomState]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
-    if (e.touches.length < 2) {
-      isPinching.current = false;
-    }
+    if (e.touches.length < 2) isPinching.current = false;
     if (e.touches.length === 0) {
       isPanning.current = false;
-      if (scale < 1.1) {
-        resetZoom();
-      }
+      if (scale < 1.1) resetZoom();
     }
   }, [scale, resetZoom]);
 
-  // Double tap to zoom
+  // ── Double click / double tap ──
   const lastTap = useRef(0);
   const handleDoubleClick = useCallback(() => {
     if (scale > 1) {
       resetZoom();
     } else {
       setScale(2);
+      setTranslate({ x: 0, y: 0 });
       setIsZoomed(true);
       onZoomChange?.(true);
     }
@@ -135,26 +166,34 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
   const handleTap = useCallback((e: React.TouchEvent) => {
     if (e.touches.length !== 0) return;
     const now = Date.now();
-    if (now - lastTap.current < 300) {
-      handleDoubleClick();
-    }
+    if (now - lastTap.current < 300) handleDoubleClick();
     lastTap.current = now;
   }, [handleDoubleClick]);
+
+  const cursorStyle = scale > 1
+    ? (isMouseDragging.current ? "grabbing" : "grab")
+    : "zoom-in";
 
   return (
     <div
       ref={containerRef}
       className="w-full h-full overflow-hidden touch-none"
+      style={{ cursor: cursorStyle }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={(e) => { handleTouchEnd(e); handleTap(e); }}
       onDoubleClick={handleDoubleClick}
+      onWheel={handleWheel}
+      onMouseDown={handleMouseDown}
+      onMouseMove={handleMouseMove}
+      onMouseUp={handleMouseUp}
+      onMouseLeave={handleMouseUp}
     >
       <img
         src={src}
         alt={alt}
         draggable={false}
-        className="h-full w-full object-cover select-none"
+        className="h-full w-full object-cover select-none pointer-events-none"
         style={{
           transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
           transition: scale === 1 && !isPinching.current ? "transform 0.2s ease-out" : "none",
