@@ -10,6 +10,7 @@ import { ShoppingBag, ChevronLeft, ChevronRight } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductColorVariant } from "@/types/product";
 import useEmblaCarousel from "embla-carousel-react";
+import ZoomableImage from "@/components/store/ZoomableImage";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
