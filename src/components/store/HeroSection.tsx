@@ -17,8 +17,9 @@ export default function HeroSection() {
         <img
           src="/banner-aura.jpg"
           alt="Modelo Aura Femenina"
-          className={`w-full h-full object-cover object-center md:object-top transition-transform duration-[2000ms] ease-out ${
-            loaded ? "scale-100" : "scale-110"
+          className={`w-full h-full object-contain md:object-cover object-[65%_center] transition-transform duration-[2000ms] ease-out ${
+            loaded ? "scale-100" : "scale-105"
+          }`}
           }`}
           loading="eager"
         />
