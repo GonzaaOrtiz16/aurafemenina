@@ -13,6 +13,8 @@ export function useSiteSetting<T = any>(key: string) {
       if (error) throw error;
       return (data?.value ?? null) as T;
     },
+    staleTime: 30 * 1000, // 30 seconds
+    refetchOnWindowFocus: true,
   });
 }
 
