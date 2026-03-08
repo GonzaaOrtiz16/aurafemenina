@@ -20,24 +20,41 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColorIdx, setSelectedColorIdx] = useState<number>(-1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const scrollRef = useRef<HTMLDivElement>(null);
+
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: false,
+    dragFree: false,
+    containScroll: "trimSnaps",
+    skipSnaps: false,
+  });
+
+  const onSelect = useCallback(() => {
+    if (!emblaApi) return;
+    setCurrentImageIndex(emblaApi.selectedScrollSnap());
+  }, [emblaApi]);
+
+  useEffect(() => {
+    if (!emblaApi) return;
+    emblaApi.on("select", onSelect);
+    onSelect();
+    return () => { emblaApi.off("select", onSelect); };
+  }, [emblaApi, onSelect]);
+
+  const scrollPrev = useCallback(() => emblaApi?.scrollPrev(), [emblaApi]);
+  const scrollNext = useCallback(() => emblaApi?.scrollNext(), [emblaApi]);
+
+  const scrollTo = useCallback((idx: number) => emblaApi?.scrollTo(idx), [emblaApi]);
 
   useEffect(() => {
     if (product) {
       setCurrentImageIndex(0);
       setSelectedSize("");
-      // Auto-select first color if only one
       const colors = getColors();
       setSelectedColorIdx(colors.length === 1 ? 0 : -1);
+      // Reset carousel to first slide
+      emblaApi?.scrollTo(0, true);
     }
   }, [product]);
-
-  const handleScroll = () => {
-    if (scrollRef.current) {
-      const { scrollLeft, clientWidth } = scrollRef.current;
-      setCurrentImageIndex(Math.round(scrollLeft / clientWidth));
-    }
-  };
 
   if (isLoading) return <Layout><div className="container py-10"><Skeleton className="h-[400px]" /></div></Layout>;
   if (!product) return null;
@@ -53,9 +70,8 @@ export default function ProductDetail() {
   };
 
   const colors = getColors();
-  const hasVariants = colors.length > 0 && colors.some((c) => Object.keys(c.sizes).length > 0);
+  const hasVariants = colors.some((c) => Object.keys(c.sizes).length > 0);
 
-  // Available sizes depend on selected color
   const getAvailableSizes = (): string[] => {
     if (hasVariants) {
       if (selectedColorIdx >= 0 && colors[selectedColorIdx]) {
@@ -63,15 +79,13 @@ export default function ProductDetail() {
           .filter(([_, stock]) => stock > 0)
           .map(([size]) => size);
       }
-      return []; // No color selected yet
+      return [];
     }
-    // Legacy: sizes from product directly
     return product.sizes || [];
   };
 
   const availableSizes = getAvailableSizes();
 
-  // When color changes, reset size if not available in new color
   const handleColorSelect = (idx: number) => {
     setSelectedColorIdx(idx);
     const newSizes = Object.entries(colors[idx].sizes)
@@ -99,12 +113,11 @@ export default function ProductDetail() {
     });
   };
 
-  // Check stock for a specific size in the selected color
   const getStockForSize = (size: string): number => {
     if (hasVariants && selectedColorIdx >= 0) {
       return colors[selectedColorIdx].sizes[size] || 0;
     }
-    return 1; // legacy
+    return 1;
   };
 
   return (
@@ -115,36 +128,48 @@ export default function ProductDetail() {
         </Link>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12">
-          {/* Gallery */}
+          {/* Gallery - Embla Carousel */}
           <div className="relative w-full overflow-hidden rounded-sm bg-secondary group">
-            <div
-              ref={scrollRef}
-              onScroll={handleScroll}
-              className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide h-[70vh] md:h-auto md:aspect-[3/4]"
-              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-            >
-              {product.images.map((img: string, idx: number) => (
-                <div key={idx} className="min-w-full h-full snap-center flex items-center justify-center bg-white relative">
-                  <img src={img} alt={`${product.name} ${idx + 1}`} className="h-full w-full object-cover transition-transform duration-500 hover:scale-110 cursor-zoom-in" />
-                  <div className="absolute top-4 right-4 p-2 bg-black/10 rounded-full md:hidden">
-                    <ZoomIn className="w-5 h-5 text-white/50" />
+            <div ref={emblaRef} className="overflow-hidden h-[70vh] md:h-auto md:aspect-[3/4]">
+              <div className="flex h-full">
+                {product.images.map((img: string, idx: number) => (
+                  <div
+                    key={idx}
+                    className="flex-[0_0_100%] min-w-0 h-full flex items-center justify-center bg-white"
+                  >
+                    <img
+                      src={img}
+                      alt={`${product.name} ${idx + 1}`}
+                      className="h-full w-full object-cover"
+                      draggable={false}
+                    />
                   </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
+
+            {/* Dots */}
             {product.images.length > 1 && (
               <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-1.5 z-10">
                 {product.images.map((_: string, idx: number) => (
-                  <div key={idx} className={`h-1.5 rounded-full transition-all duration-300 ${currentImageIndex === idx ? "w-4 bg-foreground" : "w-1.5 bg-foreground/20"}`} />
+                  <button
+                    key={idx}
+                    onClick={() => scrollTo(idx)}
+                    className={`h-1.5 rounded-full transition-all duration-300 ${
+                      currentImageIndex === idx ? "w-4 bg-foreground" : "w-1.5 bg-foreground/20"
+                    }`}
+                  />
                 ))}
               </div>
             )}
+
+            {/* Desktop arrows */}
             {product.images.length > 1 && (
               <div className="hidden md:flex absolute inset-0 items-center justify-between px-4 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                <button onClick={() => scrollRef.current?.scrollBy({ left: -400, behavior: 'smooth' })} className="bg-background/80 p-2 rounded-full shadow-md pointer-events-auto hover:bg-background">
+                <button onClick={scrollPrev} className="bg-background/80 p-2 rounded-full shadow-md pointer-events-auto hover:bg-background">
                   <ChevronLeft className="h-6 w-6" />
                 </button>
-                <button onClick={() => scrollRef.current?.scrollBy({ left: 400, behavior: 'smooth' })} className="bg-background/80 p-2 rounded-full shadow-md pointer-events-auto hover:bg-background">
+                <button onClick={scrollNext} className="bg-background/80 p-2 rounded-full shadow-md pointer-events-auto hover:bg-background">
                   <ChevronRight className="h-6 w-6" />
                 </button>
               </div>
