@@ -123,17 +123,28 @@ export default function Products() {
         <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
           Precio máximo
         </h3>
-        <Slider
-          value={[maxPrice]}
-          onValueChange={([val]) => setMaxPrice(val)}
-          min={priceRange.min}
-          max={priceRange.max}
-          step={500}
-          className="mb-3"
-        />
-        <p className="font-body text-xs text-muted-foreground">
-          Hasta <span className="font-bold text-foreground">${maxPrice.toLocaleString("es-AR")}</span>
-        </p>
+        <div className="flex items-center gap-2">
+          <span className="font-body text-sm text-muted-foreground">$</span>
+          <Input
+            type="number"
+            value={maxPrice === priceRange.max ? "" : maxPrice}
+            onChange={(e) => {
+              const val = e.target.value;
+              if (val === "") {
+                setMaxPrice(priceRange.max);
+              } else {
+                setMaxPrice(Math.max(0, Number(val)));
+              }
+            }}
+            placeholder={priceRange.max.toLocaleString("es-AR")}
+            className="font-body text-sm h-10"
+          />
+        </div>
+        {maxPrice < priceRange.max && (
+          <p className="font-body text-xs text-muted-foreground mt-2">
+            Hasta <span className="font-bold text-foreground">${maxPrice.toLocaleString("es-AR")}</span>
+          </p>
+        )}
       </div>
 
       {/* Clear */}
