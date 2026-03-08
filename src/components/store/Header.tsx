@@ -76,6 +76,9 @@ export default function Header() {
 
         {/* Right icons */}
         <div className="flex flex-1 md:flex-none items-center justify-end gap-2 md:gap-5">
+          <Link to="/login" className="hidden md:block p-2">
+            <User className="h-5 w-5 text-foreground" />
+          </Link>
           <button className="hidden md:block p-2" onClick={() => setShowDesktopSearch(true)}>
             <Search className="h-5 w-5 text-foreground" />
           </button>
