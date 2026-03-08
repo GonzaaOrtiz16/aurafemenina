@@ -87,11 +87,10 @@ export default function Encargues() {
   });
 
   const handleCategory = (slug: string) => {
-    if (slug === activeCategory) {
-      setSearchParams({});
-    } else {
-      setSearchParams({ categoria: slug });
-    }
+    const newParams: Record<string, string> = {};
+    if (searchTerm) newParams.search = searchTerm;
+    if (slug !== activeCategory) newParams.categoria = slug;
+    setSearchParams(newParams);
   };
 
   const clearFilters = () => {
