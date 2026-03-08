@@ -29,6 +29,20 @@ export default function Products() {
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [products]);
 
+  // Extract unique colors from all products
+  const availableColors = useMemo(() => {
+    const colorMap = new Map<string, string>(); // nombre -> hex
+    products.forEach((p) => {
+      const colores = (p.colores || []) as Array<{ nombre?: string; hex?: string }>;
+      colores.forEach((c) => {
+        if (c.nombre && c.hex && !colorMap.has(c.nombre)) {
+          colorMap.set(c.nombre, c.hex);
+        }
+      });
+    });
+    return Array.from(colorMap.entries()).map(([nombre, hex]) => ({ nombre, hex }));
+  }, [products]);
+
   // Filtering
   const filteredProducts = products.filter((product) => {
     const matchesSearch = searchTerm
