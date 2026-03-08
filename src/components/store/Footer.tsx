@@ -49,6 +49,11 @@ export default function Footer() {
               <a href={c.instagram_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-foreground transition-colors">
                 <Instagram className="h-4 w-4" /> {c.instagram}
               </a>
+              {c.location && (
+                <span className="flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> {c.location}
+                </span>
+              )}
             </div>
           </div>
         </div>
