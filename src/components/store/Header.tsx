@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, ShoppingBag, Search, ChevronDown, X } from "lucide-react";
+import { Menu, ShoppingBag, Search, ChevronDown, X, LogOut, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useProducts";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementData {
   text: string;
@@ -17,6 +19,12 @@ export default function Header() {
   const location = useLocation();
   const { data: categories = [] } = useCategories();
   const { data: announcement } = useSiteSetting<AnnouncementData>("announcement");
+  const { user, isReady } = useAuth();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   const [openMenu, setOpenMenu] = useState(false);
   const [showDesktopSearch, setShowDesktopSearch] = useState(false);
@@ -128,10 +136,17 @@ export default function Header() {
                       )}
                     </div>
                   ))}
-                  <Link to="/login" onClick={() => setOpenMenu(false)}
-                    className="p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent">
-                    MI CUENTA
-                  </Link>
+                  {user ? (
+                    <button onClick={() => { setOpenMenu(false); handleLogout(); }}
+                      className="w-full text-left p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent flex items-center gap-2">
+                      <LogOut className="w-4 h-4" /> CERRAR SESIÓN
+                    </button>
+                  ) : (
+                    <Link to="/login" onClick={() => setOpenMenu(false)}
+                      className="p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent block">
+                      MI CUENTA
+                    </Link>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
@@ -148,12 +163,23 @@ export default function Header() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-3 md:gap-5">
-          <Link to="/registro" className="hidden md:block">
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">CREAR CUENTA</span>
-          </Link>
-          <Link to="/login" className="hidden md:block">
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">INICIAR SESIÓN</span>
-          </Link>
+          {isReady && (
+            user ? (
+              <button onClick={handleLogout} className="hidden md:flex items-center gap-1 group">
+                <LogOut className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground group-hover:text-foreground transition-colors">SALIR</span>
+              </button>
+            ) : (
+              <>
+                <Link to="/registro" className="hidden md:block">
+                  <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">CREAR CUENTA</span>
+                </Link>
+                <Link to="/login" className="hidden md:block">
+                  <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">INICIAR SESIÓN</span>
+                </Link>
+              </>
+            )
+          )}
           <Link to="/carrito" className="relative p-2">
             <ShoppingBag className="h-5 w-5 text-foreground" />
             {itemCount > 0 && (
