@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product, CartItem } from "@/types/product";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CartContextType {
   items: CartItem[];
-  // Actualizamos la firma de addItem para recibir color
-  addItem: (product: Product, size: string, color?: string, quantity?: number) => void;
+  // Actualizamos la firma de addItem para recibir color y retornar Promise
+  addItem: (product: Product, size: string, color?: string, quantity?: number) => Promise<void>;
   removeItem: (productId: string, size: string, color?: string) => void;
   updateQuantity: (productId: string, size: string, color: string | undefined, quantity: number) => void;
   clearCart: () => void;
