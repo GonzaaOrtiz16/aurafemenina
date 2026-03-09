@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams, Link, useNavigate } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import { useProductBySlug } from "@/hooks/useProducts";
 import { useCart } from "@/context/CartContext";
@@ -17,6 +17,7 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useProductBySlug(slug || "");
   const { addItem } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColorIdx, setSelectedColorIdx] = useState<number>(-1);
@@ -97,7 +98,7 @@ export default function ProductDetail() {
     }
   };
 
-  const handleAddToCart = () => {
+  const handleAddToCart = async () => {
     if (hasVariants && colors.length > 1 && selectedColorIdx < 0) {
       toast({ title: "Seleccioná un color", variant: "destructive" });
       return;
@@ -106,12 +107,22 @@ export default function ProductDetail() {
       toast({ title: "Seleccioná un talle", variant: "destructive" });
       return;
     }
-    const colorName = selectedColorIdx >= 0 ? colors[selectedColorIdx].nombre : "";
-    addItem(product, selectedSize, colorName);
-    toast({
-      title: "¡Agregado!",
-      description: `${product.name}${colorName ? ` - ${colorName}` : ""}${selectedSize ? ` - Talle ${selectedSize}` : ""}`,
-    });
+    
+    try {
+      const colorName = selectedColorIdx >= 0 ? colors[selectedColorIdx].nombre : "";
+      await addItem(product, selectedSize, colorName);
+      toast({
+        title: "¡Agregado!",
+        description: `${product.name}${colorName ? ` - ${colorName}` : ""}${selectedSize ? ` - Talle ${selectedSize}` : ""}`,
+      });
+    } catch (error) {
+      toast({ 
+        title: "Iniciá sesión", 
+        description: error instanceof Error ? error.message : "Tenés que iniciar sesión para agregar productos al carrito",
+        variant: "destructive" 
+      });
+      setTimeout(() => navigate("/login"), 1500);
+    }
   };
 
   const getStockForSize = (size: string): number => {

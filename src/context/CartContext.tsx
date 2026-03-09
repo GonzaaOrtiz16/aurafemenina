@@ -1,10 +1,11 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product, CartItem } from "@/types/product";
+import { supabase } from "@/integrations/supabase/client";
 
 interface CartContextType {
   items: CartItem[];
-  // Actualizamos la firma de addItem para recibir color
-  addItem: (product: Product, size: string, color?: string, quantity?: number) => void;
+  // Actualizamos la firma de addItem para recibir color y retornar Promise
+  addItem: (product: Product, size: string, color?: string, quantity?: number) => Promise<void>;
   removeItem: (productId: string, size: string, color?: string) => void;
   updateQuantity: (productId: string, size: string, color: string | undefined, quantity: number) => void;
   clearCart: () => void;
@@ -30,8 +31,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
   }, [items]);
 
-  // Modificado para considerar el color al agregar
-  const addItem = useCallback((product: Product, size: string, color?: string, quantity = 1) => {
+  // Modificado para verificar autenticación antes de agregar
+  const addItem = useCallback(async (product: Product, size: string, color?: string, quantity = 1) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error("Tenés que iniciar sesión para agregar productos al carrito");
+    }
+    
     setItems((prev) => {
       const existing = prev.find(
         (i) => i.product.id === product.id && i.size === size && i.color === color
