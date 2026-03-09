@@ -156,12 +156,23 @@ export default function Header() {
         </div>
 
         <div className="flex flex-1 items-center justify-end gap-3 md:gap-5">
-          <Link to="/registro" className="hidden md:block">
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">CREAR CUENTA</span>
-          </Link>
-          <Link to="/login" className="hidden md:block">
-            <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">INICIAR SESIÓN</span>
-          </Link>
+          {isReady && (
+            user ? (
+              <button onClick={handleLogout} className="hidden md:flex items-center gap-1 group">
+                <LogOut className="h-4 w-4 text-muted-foreground group-hover:text-foreground transition-colors" />
+                <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground group-hover:text-foreground transition-colors">SALIR</span>
+              </button>
+            ) : (
+              <>
+                <Link to="/registro" className="hidden md:block">
+                  <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">CREAR CUENTA</span>
+                </Link>
+                <Link to="/login" className="hidden md:block">
+                  <span className="text-[10px] font-bold tracking-[0.1em] uppercase text-muted-foreground hover:text-foreground transition-colors">INICIAR SESIÓN</span>
+                </Link>
+              </>
+            )
+          )}
           <Link to="/carrito" className="relative p-2">
             <ShoppingBag className="h-5 w-5 text-foreground" />
             {itemCount > 0 && (
