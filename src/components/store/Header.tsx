@@ -1,10 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, ShoppingBag, Search, ChevronDown, X } from "lucide-react";
+import { Menu, ShoppingBag, Search, ChevronDown, X, LogOut, User } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useProducts";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
+import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 
 interface AnnouncementData {
   text: string;
