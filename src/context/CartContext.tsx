@@ -31,8 +31,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
   }, [items]);
 
-  // Modificado para considerar el color al agregar
-  const addItem = useCallback((product: Product, size: string, color?: string, quantity = 1) => {
+  // Modificado para verificar autenticación antes de agregar
+  const addItem = useCallback(async (product: Product, size: string, color?: string, quantity = 1) => {
+    const { data: { session } } = await supabase.auth.getSession();
+    
+    if (!session) {
+      throw new Error("Tenés que iniciar sesión para agregar productos al carrito");
+    }
+    
     setItems((prev) => {
       const existing = prev.find(
         (i) => i.product.id === product.id && i.size === size && i.color === color
