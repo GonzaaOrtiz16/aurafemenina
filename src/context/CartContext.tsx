@@ -1,16 +1,16 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product, CartItem } from "@/types/product";
-import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface CartContextType {
   items: CartItem[];
-  // Actualizamos la firma de addItem para recibir color y retornar Promise
-  addItem: (product: Product, size: string, color?: string, quantity?: number) => Promise<void>;
+  addItem: (product: Product, size: string, color?: string, quantity?: number) => void;
   removeItem: (productId: string, size: string, color?: string) => void;
   updateQuantity: (productId: string, size: string, color: string | undefined, quantity: number) => void;
   clearCart: () => void;
   itemCount: number;
   subtotal: number;
+  isAuthenticated: boolean;
 }
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
@@ -18,6 +18,8 @@ const CartContext = createContext<CartContextType | undefined>(undefined);
 const CART_KEY = "aurafemenina-cart";
 
 export function CartProvider({ children }: { children: React.ReactNode }) {
+  const { user, isReady, isAuthenticated } = useAuth();
+  
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const stored = localStorage.getItem(CART_KEY);
@@ -31,11 +33,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     localStorage.setItem(CART_KEY, JSON.stringify(items));
   }, [items]);
 
-  // Modificado para verificar autenticación antes de agregar
-  const addItem = useCallback(async (product: Product, size: string, color?: string, quantity = 1) => {
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (!session) {
+  // Clear cart when user logs out
+  useEffect(() => {
+    if (isReady && !user) {
+      setItems([]);
+    }
+  }, [isReady, user]);
+
+  const addItem = useCallback((product: Product, size: string, color?: string, quantity = 1) => {
+    if (!isAuthenticated) {
       throw new Error("Tenés que iniciar sesión para agregar productos al carrito");
     }
     
@@ -52,16 +58,14 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
       }
       return [...prev, { product, size, color, quantity }];
     });
-  }, []);
+  }, [isAuthenticated]);
 
-  // Modificado para eliminar considerando el color
   const removeItem = useCallback((productId: string, size: string, color?: string) => {
     setItems((prev) =>
       prev.filter((i) => !(i.product.id === productId && i.size === size && i.color === color))
     );
   }, []);
 
-  // Modificado para actualizar cantidad considerando el color
   const updateQuantity = useCallback(
     (productId: string, size: string, color: string | undefined, quantity: number) => {
       if (quantity <= 0) {
@@ -89,7 +93,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, removeItem, updateQuantity, clearCart, itemCount, subtotal }}
+      value={{ items, addItem, removeItem, updateQuantity, clearCart, itemCount, subtotal, isAuthenticated }}
     >
       {children}
     </CartContext.Provider>

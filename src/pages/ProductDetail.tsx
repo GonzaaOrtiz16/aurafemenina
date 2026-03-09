@@ -98,7 +98,19 @@ export default function ProductDetail() {
     }
   };
 
-  const handleAddToCart = async () => {
+  const { isAuthenticated } = useCart();
+
+  const handleAddToCart = () => {
+    if (!isAuthenticated) {
+      toast({ 
+        title: "Iniciá sesión", 
+        description: "Tenés que iniciar sesión para agregar productos al carrito",
+        variant: "destructive" 
+      });
+      setTimeout(() => navigate("/login"), 1500);
+      return;
+    }
+
     if (hasVariants && colors.length > 1 && selectedColorIdx < 0) {
       toast({ title: "Seleccioná un color", variant: "destructive" });
       return;
@@ -110,18 +122,17 @@ export default function ProductDetail() {
     
     try {
       const colorName = selectedColorIdx >= 0 ? colors[selectedColorIdx].nombre : "";
-      await addItem(product, selectedSize, colorName);
+      addItem(product, selectedSize, colorName);
       toast({
         title: "¡Agregado!",
         description: `${product.name}${colorName ? ` - ${colorName}` : ""}${selectedSize ? ` - Talle ${selectedSize}` : ""}`,
       });
     } catch (error) {
       toast({ 
-        title: "Iniciá sesión", 
-        description: error instanceof Error ? error.message : "Tenés que iniciar sesión para agregar productos al carrito",
+        title: "Error", 
+        description: error instanceof Error ? error.message : "No se pudo agregar al carrito",
         variant: "destructive" 
       });
-      setTimeout(() => navigate("/login"), 1500);
     }
   };
 
