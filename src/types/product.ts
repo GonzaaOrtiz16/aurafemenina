@@ -29,6 +29,8 @@ export interface CartItem {
 
 export type ShippingZone = "caba" | "zona_sur" | "gba" | "interior";
 
+export type DeliveryMethod = "shipping" | "pickup";
+
 export interface ShippingResult {
   cost: number;
   method: string;
