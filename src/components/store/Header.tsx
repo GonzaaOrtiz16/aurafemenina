@@ -19,6 +19,12 @@ export default function Header() {
   const location = useLocation();
   const { data: categories = [] } = useCategories();
   const { data: announcement } = useSiteSetting<AnnouncementData>("announcement");
+  const { user, isReady } = useAuth();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/");
+  };
 
   const [openMenu, setOpenMenu] = useState(false);
   const [showDesktopSearch, setShowDesktopSearch] = useState(false);
