@@ -136,10 +136,17 @@ export default function Header() {
                       )}
                     </div>
                   ))}
-                  <Link to="/login" onClick={() => setOpenMenu(false)}
-                    className="p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent">
-                    MI CUENTA
-                  </Link>
+                  {user ? (
+                    <button onClick={() => { setOpenMenu(false); handleLogout(); }}
+                      className="w-full text-left p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent flex items-center gap-2">
+                      <LogOut className="w-4 h-4" /> CERRAR SESIÓN
+                    </button>
+                  ) : (
+                    <Link to="/login" onClick={() => setOpenMenu(false)}
+                      className="p-5 border-b border-border/50 font-body text-xs font-bold uppercase tracking-[0.15em] text-accent block">
+                      MI CUENTA
+                    </Link>
+                  )}
                 </nav>
               </SheetContent>
             </Sheet>
