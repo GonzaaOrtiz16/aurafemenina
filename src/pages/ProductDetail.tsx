@@ -17,6 +17,7 @@ export default function ProductDetail() {
   const { data: product, isLoading } = useProductBySlug(slug || "");
   const { addItem } = useCart();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColorIdx, setSelectedColorIdx] = useState<number>(-1);
