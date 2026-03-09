@@ -101,13 +101,18 @@ export default function ProductDetail() {
   const { isAuthenticated } = useCart();
 
   const handleAddToCart = () => {
+    console.log("handleAddToCart called, isAuthenticated:", isAuthenticated);
     if (!isAuthenticated) {
+      console.log("User not authenticated, showing toast and redirecting");
       toast({ 
         title: "Iniciá sesión", 
         description: "Tenés que iniciar sesión para agregar productos al carrito",
         variant: "destructive" 
       });
-      setTimeout(() => navigate("/login"), 1500);
+      setTimeout(() => {
+        console.log("Navigating to /login");
+        navigate("/login");
+      }, 1500);
       return;
     }
 
