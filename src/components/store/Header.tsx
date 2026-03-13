@@ -204,15 +204,27 @@ export default function Header() {
           </Link>
         </div>
 
+        {/* Hidden file input for visual search */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleVisualSearch}
+        />
+
         {showDesktopSearch && (
           <div className="absolute inset-0 bg-card z-[60] flex items-center px-12 animate-fade-in">
             <form onSubmit={handleSearch} className="w-full flex items-center gap-4">
-              <Search className="w-6 h-6 text-muted-foreground" />
+              <Search className="w-5 h-5 text-muted-foreground" />
               <input autoFocus type="text" placeholder="¿Qué estás buscando?"
-                className="w-full text-2xl font-light outline-none bg-transparent font-display"
+                className="w-full text-xl font-light outline-none bg-transparent font-display tracking-wide"
                 value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="hover:text-accent transition-colors" title="Buscar por imagen">
+                <Camera className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+              </button>
               <button type="button" onClick={() => setShowDesktopSearch(false)}>
-                <X className="w-8 h-8 text-muted-foreground hover:text-foreground transition-colors" />
+                <X className="w-6 h-6 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
             </form>
           </div>
