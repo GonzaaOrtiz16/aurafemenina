@@ -23,6 +23,7 @@ export default function Products() {
   const [maxPrice, setMaxPrice] = useState(100000);
   const [aiSearching, setAiSearching] = useState(false);
   const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
+  const [visualSearching, setVisualSearching] = useState(false);
 
   const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
   const { data: categories = [] } = useCategories();
