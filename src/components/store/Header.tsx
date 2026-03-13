@@ -33,6 +33,22 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileSubmenu, setMobileSubmenu] = useState<string | null>(null);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleVisualSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      // Navigate to products with visual search
+      navigate(`/productos?visual=1`);
+      // Store in sessionStorage for the Products page to pick up
+      sessionStorage.setItem("visual-search-image", base64);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   // Build dynamic nav links from categories
   const categoryChildren = [
