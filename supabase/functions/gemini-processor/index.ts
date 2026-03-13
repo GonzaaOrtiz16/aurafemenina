@@ -230,6 +230,102 @@ Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}
       });
     }
 
+    // ── ACTION: complete-look ──
+    if (action === "complete-look") {
+      const { productName, productCategory, catalog } = payload;
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: `Sos una estilista de moda experta. Dado un producto principal, elegí exactamente 2 productos complementarios del catálogo para armar un outfit completo y coherente.
+Pensá en combinaciones que una mujer usaría juntas (ej: si es un jean, sugerí un top y zapatos; si es un vestido, sugerí accesorios o abrigos).
+Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
+            },
+            {
+              role: "user",
+              content: `Producto principal: "${productName}" (${productCategory})\n\nCatálogo:\n${catalog}`,
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) throw new Error("AI complete-look error");
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "[]";
+      const match = content.match(/\[[\s\S]*?\]/);
+      const ids = match ? JSON.parse(match[0]) : [];
+
+      return new Response(JSON.stringify({ ids }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
+    // ── ACTION: visual-search ──
+    if (action === "visual-search") {
+      const { imageBase64 } = payload;
+
+      const { data: products } = await supabase
+        .from("products")
+        .select("id, name, slug, price, description, colores, categories(name)")
+        .limit(200);
+
+      const productList = (products || [])
+        .map((p: any) => {
+          const cat = p.categories?.name || "";
+          const colores = (p.colores || []).map((c: any) => c.nombre).filter(Boolean).join(", ");
+          return `ID:${p.id} | ${p.name} | Cat:${cat} | Colores:${colores}`;
+        })
+        .join("\n");
+
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${LOVABLE_API_KEY}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          model: "google/gemini-2.5-flash",
+          messages: [
+            {
+              role: "system",
+              content: `Sos un motor de búsqueda visual para una tienda de ropa femenina. El usuario te envía una imagen de una prenda.
+Analizá el tipo de prenda, color, estilo y encontrá los productos más similares del catálogo.
+CATÁLOGO:
+${productList}
+
+Respondé SOLO con un JSON array de IDs de los productos más similares: ["id1", "id2", ...]
+Si no hay productos similares, devolvé [].`,
+            },
+            {
+              role: "user",
+              content: [
+                { type: "text", text: "Encontrá prendas similares a esta imagen en el catálogo." },
+                { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
+              ],
+            },
+          ],
+        }),
+      });
+
+      if (!response.ok) throw new Error("AI visual search error");
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || "[]";
+      const match = content.match(/\[[\s\S]*?\]/);
+      const ids = match ? JSON.parse(match[0]) : [];
+
+      return new Response(JSON.stringify({ ids }), {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: "Unknown action" }), {
       status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
