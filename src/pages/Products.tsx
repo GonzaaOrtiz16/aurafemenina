@@ -4,7 +4,7 @@ import ProductCard from "@/components/store/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, Camera } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Product } from "@/types/product";
 
