@@ -5,10 +5,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/shipping";
-import { Plus, Pencil, Trash2, X, Save, Palette, Image as ImageIcon, Loader2, Upload } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, Palette, Image as ImageIcon, Loader2, Upload, Sparkles } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
+
+const GEMINI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
 
 interface ColorVariant {
   nombre: string;
@@ -46,6 +48,8 @@ export default function AdminProducts() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbProduct | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [generatingDesc, setGeneratingDesc] = useState(false);
+  const [generatingSeo, setGeneratingSeo] = useState(false);
   const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
 
@@ -117,6 +121,56 @@ export default function AdminProducts() {
 
   const removeImage = (index: number) => {
     setForm({ ...form, images: form.images.filter((_, i) => i !== index) });
+  };
+
+  const handleGenerateDescription = async () => {
+    if (!form.name.trim()) {
+      toast({ title: "Escribí el nombre del producto primero", variant: "destructive" });
+      return;
+    }
+    setGeneratingDesc(true);
+    try {
+      const catName = categories.find(c => c.id === form.category_id)?.name || "";
+      const resp = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ action: "generate-description", payload: { productName: form.name, category: catName } }),
+      });
+      const data = await resp.json();
+      if (data.description) {
+        setForm(prev => ({ ...prev, description: data.description }));
+        toast({ title: "Descripción generada ✨" });
+      }
+    } catch {
+      toast({ title: "Error generando descripción", variant: "destructive" });
+    }
+    setGeneratingDesc(false);
+  };
+
+  const handleGenerateSeo = async () => {
+    if (!form.name.trim()) return;
+    setGeneratingSeo(true);
+    try {
+      const catName = categories.find(c => c.id === form.category_id)?.name || "";
+      const resp = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ action: "generate-seo", payload: { productName: form.name, description: form.description, category: catName } }),
+      });
+      const data = await resp.json();
+      if (data.metaTitle || data.metaDescription) {
+        toast({ title: "SEO generado ✨", description: `Título: ${data.metaTitle || "-"}\nDesc: ${data.metaDescription || "-"}` });
+      }
+    } catch {
+      toast({ title: "Error generando SEO", variant: "destructive" });
+    }
+    setGeneratingSeo(false);
   };
 
   const handleSave = async () => {
@@ -290,7 +344,20 @@ export default function AdminProducts() {
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Descripción</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium">Descripción</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateDescription}
+                    disabled={generatingDesc}
+                    className="text-xs gap-1"
+                  >
+                    {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Generar con IA
+                  </Button>
+                </div>
                 <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -423,6 +490,17 @@ export default function AdminProducts() {
                 </div>
               ))}
             </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGenerateSeo}
+              disabled={generatingSeo || !form.name.trim()}
+              className="w-full gap-2 mb-3"
+            >
+              {generatingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Generar SEO automático
+            </Button>
 
             <Button onClick={handleSave} disabled={uploading} className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg rounded-md">
               {uploading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Save className="h-5 w-5 mr-2" />}

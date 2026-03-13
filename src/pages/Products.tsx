@@ -4,10 +4,13 @@ import ProductCard from "@/components/store/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { X } from "lucide-react";
-import { useMemo, useState } from "react";
+import { X, Sparkles, Loader2 } from "lucide-react";
+import { useMemo, useState, useEffect, useCallback } from "react";
+import { Product } from "@/types/product";
 
 const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "34", "36", "38", "40", "42", "44"];
+
+const GEMINI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
 
 export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -18,9 +21,45 @@ export default function Products() {
   const [activeSize, setActiveSize] = useState("");
   const [activeColor, setActiveColor] = useState("");
   const [maxPrice, setMaxPrice] = useState(100000);
+  const [aiSearching, setAiSearching] = useState(false);
+  const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
 
   const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
   const { data: categories = [] } = useCategories();
+
+  // Smart search with AI
+  const doAiSearch = useCallback(async (query: string) => {
+    if (!query || query.length < 4) {
+      setAiResultIds(null);
+      return;
+    }
+    setAiSearching(true);
+    try {
+      const resp = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ action: "smart-search", payload: { query } }),
+      });
+      const data = await resp.json();
+      setAiResultIds(data.ids || []);
+    } catch {
+      setAiResultIds(null);
+    }
+    setAiSearching(false);
+  }, []);
+
+  // Debounce AI search
+  useEffect(() => {
+    if (!searchTerm) {
+      setAiResultIds(null);
+      return;
+    }
+    const timer = setTimeout(() => doAiSearch(searchTerm), 800);
+    return () => clearTimeout(timer);
+  }, [searchTerm, doAiSearch]);
 
   // Derive price range from products
   const priceRange = useMemo(() => {
@@ -31,7 +70,7 @@ export default function Products() {
 
   // Extract unique colors from all products
   const availableColors = useMemo(() => {
-    const colorMap = new Map<string, string>(); // nombre -> hex
+    const colorMap = new Map<string, string>();
     products.forEach((p) => {
       const colores = (p.colores || []) as Array<{ nombre?: string; hex?: string }>;
       colores.forEach((c) => {
@@ -44,25 +83,35 @@ export default function Products() {
   }, [products]);
 
   // Filtering
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = searchTerm
-      ? product.name.toLowerCase().includes(searchTerm)
-      : true;
+  const filteredProducts = useMemo(() => {
+    let result = products.filter((product) => {
+      const matchesSearch = searchTerm
+        ? product.name.toLowerCase().includes(searchTerm)
+        : true;
+      const matchesSize = activeSize
+        ? product.sizes?.some((s: string) => s.toUpperCase() === activeSize.toUpperCase())
+        : true;
+      const matchesPrice = product.price <= maxPrice;
+      const matchesColor = activeColor
+        ? ((product.colores || []) as Array<{ nombre?: string }>).some(
+            (c) => c.nombre?.toLowerCase() === activeColor.toLowerCase()
+          )
+        : true;
+      return matchesSearch && matchesSize && matchesPrice && matchesColor;
+    });
 
-    const matchesSize = activeSize
-      ? product.sizes?.some((s: string) => s.toUpperCase() === activeSize.toUpperCase())
-      : true;
+    // If AI search returned results, reorder by AI relevance
+    if (aiResultIds && aiResultIds.length > 0 && searchTerm) {
+      const idSet = new Set(aiResultIds);
+      const aiMatches = aiResultIds
+        .map((id) => result.find((p) => p.id === id))
+        .filter(Boolean) as Product[];
+      const rest = result.filter((p) => !idSet.has(p.id));
+      result = [...aiMatches, ...rest];
+    }
 
-    const matchesPrice = product.price <= maxPrice;
-
-    const matchesColor = activeColor
-      ? ((product.colores || []) as Array<{ nombre?: string }>).some(
-          (c) => c.nombre?.toLowerCase() === activeColor.toLowerCase()
-        )
-      : true;
-
-    return matchesSearch && matchesSize && matchesPrice && matchesColor;
-  });
+    return result;
+  }, [products, searchTerm, activeSize, maxPrice, activeColor, aiResultIds]);
 
   const handleCategory = (slug: string) => {
     if (slug === activeCategory) {
@@ -211,13 +260,25 @@ export default function Products() {
     <Layout>
       <div className="container py-8">
         {/* Title */}
-        <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-4 tracking-wide uppercase">
+        <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-2 tracking-wide uppercase">
           {searchTerm
             ? `Resultados para: "${searchTerm}"`
             : activeCategory
             ? categories.find((c) => c.slug === activeCategory)?.name
             : "Todos los productos"}
         </h1>
+        {aiSearching && searchTerm && (
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
+            <span className="text-xs text-muted-foreground">Buscando con inteligencia artificial...</span>
+          </div>
+        )}
+        {aiResultIds && aiResultIds.length > 0 && searchTerm && !aiSearching && (
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            <span className="text-xs text-muted-foreground">Resultados mejorados con IA</span>
+          </div>
+        )}
         <div className="w-12 h-[1px] bg-accent/40 mx-auto mb-10"></div>
 
         {/* Active filter badges (mobile) */}
