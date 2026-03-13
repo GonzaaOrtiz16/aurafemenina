@@ -344,7 +344,20 @@ export default function AdminProducts() {
                 <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value, slug: generateSlug(e.target.value) })} />
               </div>
               <div>
-                <label className="text-sm font-medium mb-1 block">Descripción</label>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-sm font-medium">Descripción</label>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={handleGenerateDescription}
+                    disabled={generatingDesc}
+                    className="text-xs gap-1"
+                  >
+                    {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
+                    Generar con IA
+                  </Button>
+                </div>
                 <Textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={3} />
               </div>
               <div className="grid grid-cols-2 gap-4">
