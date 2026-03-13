@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from "react";
-import { Sparkles, X, Send, Loader2 } from "lucide-react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { Sparkles, X, Send, Loader2, Camera } from "lucide-react";
 import ReactMarkdown from "react-markdown";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
   role: "user" | "assistant";
@@ -8,6 +9,12 @@ interface Message {
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
+
+// Singleton state for opening from outside
+let externalOpenFn: ((msg?: string) => void) | null = null;
+export function openAuraStylist(initialMessage?: string) {
+  externalOpenFn?.(initialMessage);
+}
 
 export default function AuraStylist() {
   const [open, setOpen] = useState(false);
@@ -17,18 +24,7 @@ export default function AuraStylist() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  useEffect(() => {
-    if (open && inputRef.current) {
-      inputRef.current.focus();
-    }
-  }, [open]);
-
-  const sendMessage = async () => {
-    const text = input.trim();
+  const sendMessageWithText = useCallback(async (text: string) => {
     if (!text || loading) return;
 
     const userMsg: Message = { role: "user", content: text };
@@ -52,9 +48,7 @@ export default function AuraStylist() {
         }),
       });
 
-      if (!resp.ok || !resp.body) {
-        throw new Error("Error connecting to AI");
-      }
+      if (!resp.ok || !resp.body) throw new Error("Error connecting to AI");
 
       const reader = resp.body.getReader();
       const decoder = new TextDecoder();
@@ -69,14 +63,11 @@ export default function AuraStylist() {
         while ((newlineIndex = textBuffer.indexOf("\n")) !== -1) {
           let line = textBuffer.slice(0, newlineIndex);
           textBuffer = textBuffer.slice(newlineIndex + 1);
-
           if (line.endsWith("\r")) line = line.slice(0, -1);
           if (line.startsWith(":") || line.trim() === "") continue;
           if (!line.startsWith("data: ")) continue;
-
           const jsonStr = line.slice(6).trim();
           if (jsonStr === "[DONE]") break;
-
           try {
             const parsed = JSON.parse(jsonStr);
             const content = parsed.choices?.[0]?.delta?.content;
@@ -98,15 +89,35 @@ export default function AuraStylist() {
           }
         }
       }
-    } catch (e) {
+    } catch {
       setMessages((prev) => [
         ...prev,
         { role: "assistant", content: "Perdón, hubo un error. ¿Podés intentar de nuevo? 💕" },
       ]);
     }
-
     setLoading(false);
-  };
+  }, [messages, loading]);
+
+  // Register external open function
+  useEffect(() => {
+    externalOpenFn = (initialMessage?: string) => {
+      setOpen(true);
+      if (initialMessage) {
+        setTimeout(() => sendMessageWithText(initialMessage), 300);
+      }
+    };
+    return () => { externalOpenFn = null; };
+  }, [sendMessageWithText]);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  useEffect(() => {
+    if (open && inputRef.current) inputRef.current.focus();
+  }, [open]);
+
+  const sendMessage = () => sendMessageWithText(input.trim());
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
@@ -118,97 +129,105 @@ export default function AuraStylist() {
   return (
     <>
       {/* Toggle button */}
-      <button
+      <motion.button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg hover:scale-110 transition-transform duration-200"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-2xl"
+        whileHover={{ scale: 1.1 }}
+        whileTap={{ scale: 0.95 }}
         aria-label="Aura Stylist"
       >
-        {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
-      </button>
+        {open ? <X className="h-5 w-5" /> : <Sparkles className="h-5 w-5" />}
+      </motion.button>
 
       {/* Chat panel */}
-      {open && (
-        <div className="fixed bottom-24 right-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] bg-background border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
-          style={{ height: "min(480px, calc(100vh - 8rem))" }}
-        >
-          {/* Header */}
-          <div className="px-4 py-3 border-b border-border bg-secondary/30">
-            <div className="flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-accent" />
-              <div>
-                <p className="font-display text-sm font-semibold tracking-wide">Aura Stylist</p>
-                <p className="text-[10px] text-muted-foreground">Tu asesora de moda virtual ✨</p>
+      <AnimatePresence>
+        {open && (
+          <motion.div
+            initial={{ opacity: 0, y: 20, scale: 0.95 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.95 }}
+            transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
+            className="fixed bottom-24 right-6 z-50 w-[360px] max-w-[calc(100vw-3rem)] bg-background border border-border shadow-2xl flex flex-col overflow-hidden"
+            style={{ height: "min(520px, calc(100vh - 8rem))" }}
+          >
+            {/* Header */}
+            <div className="px-5 py-4 border-b border-border">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-full bg-accent/10 flex items-center justify-center">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                </div>
+                <div>
+                  <p className="font-display text-sm font-semibold tracking-wider uppercase">Aura Stylist</p>
+                  <p className="text-[9px] text-muted-foreground tracking-widest uppercase">Asesora de moda virtual</p>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Messages */}
-          <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3">
-            {messages.length === 0 && (
-              <div className="text-center py-8">
-                <Sparkles className="h-8 w-8 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-xs text-muted-foreground">
-                  ¡Hola! Soy tu asesora de moda.
-                  <br />
-                  Preguntame lo que quieras 💕
-                </p>
-              </div>
-            )}
-            {messages.map((msg, i) => (
-              <div
-                key={i}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
-              >
-                <div
-                  className={`max-w-[85%] rounded-lg px-3 py-2 text-xs leading-relaxed ${
-                    msg.role === "user"
-                      ? "bg-foreground text-background"
-                      : "bg-secondary text-foreground"
-                  }`}
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+              {messages.length === 0 && (
+                <div className="text-center py-10">
+                  <Sparkles className="h-8 w-8 text-muted-foreground/20 mx-auto mb-4" />
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    ¡Hola! Soy tu asesora de moda personal.
+                    <br />
+                    Preguntame lo que quieras 💕
+                  </p>
+                </div>
+              )}
+              {messages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
+                  <div
+                    className={`max-w-[85%] px-4 py-3 text-xs leading-relaxed ${
+                      msg.role === "user"
+                        ? "bg-foreground text-background"
+                        : "bg-secondary/60 text-foreground border border-border/50"
+                    }`}
+                  >
+                    {msg.role === "assistant" ? (
+                      <div className="prose prose-xs prose-p:my-1 prose-ul:my-1 prose-li:my-0">
+                        <ReactMarkdown>{msg.content}</ReactMarkdown>
+                      </div>
+                    ) : (
+                      msg.content
+                    )}
+                  </div>
+                </div>
+              ))}
+              {loading && messages[messages.length - 1]?.role !== "assistant" && (
+                <div className="flex justify-start">
+                  <div className="bg-secondary/60 border border-border/50 px-4 py-3">
+                    <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+                  </div>
+                </div>
+              )}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input */}
+            <div className="border-t border-border p-4">
+              <div className="flex gap-2">
+                <input
+                  ref={inputRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="¿En qué te puedo ayudar?"
+                  className="flex-1 bg-transparent border border-border px-4 py-2.5 text-xs outline-none focus:border-foreground transition-colors placeholder:text-muted-foreground/60"
+                  disabled={loading}
+                />
+                <button
+                  onClick={sendMessage}
+                  disabled={!input.trim() || loading}
+                  className="bg-foreground text-background px-3 py-2.5 disabled:opacity-30 hover:bg-foreground/90 transition-colors"
                 >
-                  {msg.role === "assistant" ? (
-                    <div className="prose prose-xs prose-p:my-1 prose-ul:my-1 prose-li:my-0">
-                      <ReactMarkdown>{msg.content}</ReactMarkdown>
-                    </div>
-                  ) : (
-                    msg.content
-                  )}
-                </div>
+                  <Send className="h-3.5 w-3.5" />
+                </button>
               </div>
-            ))}
-            {loading && messages[messages.length - 1]?.role !== "assistant" && (
-              <div className="flex justify-start">
-                <div className="bg-secondary rounded-lg px-3 py-2">
-                  <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
-                </div>
-              </div>
-            )}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input */}
-          <div className="border-t border-border p-3">
-            <div className="flex gap-2">
-              <input
-                ref={inputRef}
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder="¿En qué te puedo ayudar?"
-                className="flex-1 bg-secondary/50 border border-border rounded-md px-3 py-2 text-xs outline-none focus:border-foreground/50 transition-colors placeholder:text-muted-foreground"
-                disabled={loading}
-              />
-              <button
-                onClick={sendMessage}
-                disabled={!input.trim() || loading}
-                className="bg-foreground text-background rounded-md px-3 py-2 disabled:opacity-40 hover:bg-foreground/90 transition-colors"
-              >
-                <Send className="h-3.5 w-3.5" />
-              </button>
             </div>
-          </div>
-        </div>
-      )}
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

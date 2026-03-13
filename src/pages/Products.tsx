@@ -4,7 +4,7 @@ import ProductCard from "@/components/store/ProductCard";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { X, Sparkles, Loader2 } from "lucide-react";
+import { X, Sparkles, Loader2, Camera } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Product } from "@/types/product";
 
@@ -23,6 +23,7 @@ export default function Products() {
   const [maxPrice, setMaxPrice] = useState(100000);
   const [aiSearching, setAiSearching] = useState(false);
   const [aiResultIds, setAiResultIds] = useState<string[] | null>(null);
+  const [visualSearching, setVisualSearching] = useState(false);
 
   const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
   const { data: categories = [] } = useCategories();
@@ -60,6 +61,28 @@ export default function Products() {
     const timer = setTimeout(() => doAiSearch(searchTerm), 800);
     return () => clearTimeout(timer);
   }, [searchTerm, doAiSearch]);
+
+  // Visual search via sessionStorage
+  useEffect(() => {
+    const isVisual = searchParams.get("visual");
+    if (!isVisual) return;
+    const imageBase64 = sessionStorage.getItem("visual-search-image");
+    if (!imageBase64) return;
+    sessionStorage.removeItem("visual-search-image");
+    setVisualSearching(true);
+    fetch(GEMINI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ action: "visual-search", payload: { imageBase64 } }),
+    })
+      .then((r) => r.json())
+      .then((data) => setAiResultIds(data.ids || []))
+      .catch(() => setAiResultIds(null))
+      .finally(() => setVisualSearching(false));
+  }, [searchParams]);
 
   // Derive price range from products
   const priceRange = useMemo(() => {
@@ -258,7 +281,7 @@ export default function Products() {
 
   return (
     <Layout>
-      <div className="container py-8">
+      <div className="container py-10 md:py-16 px-6 md:px-12">
         {/* Title */}
         <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-2 tracking-wide uppercase">
           {searchTerm
@@ -268,18 +291,24 @@ export default function Products() {
             : "Todos los productos"}
         </h1>
         {aiSearching && searchTerm && (
-          <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="flex items-center justify-center gap-2 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
-            <span className="text-xs text-muted-foreground">Buscando con inteligencia artificial...</span>
+            <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Buscando con inteligencia artificial...</span>
           </div>
         )}
-        {aiResultIds && aiResultIds.length > 0 && searchTerm && !aiSearching && (
-          <div className="flex items-center justify-center gap-2 mb-2">
+        {visualSearching && (
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Camera className="h-3.5 w-3.5 text-accent animate-pulse" />
+            <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Analizando imagen...</span>
+          </div>
+        )}
+        {aiResultIds && aiResultIds.length > 0 && !aiSearching && !visualSearching && (
+          <div className="flex items-center justify-center gap-2 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
-            <span className="text-xs text-muted-foreground">Resultados mejorados con IA</span>
+            <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Resultados mejorados con IA</span>
           </div>
         )}
-        <div className="w-12 h-[1px] bg-accent/40 mx-auto mb-10"></div>
+        <div className="w-16 h-[1px] bg-accent/30 mx-auto mb-12"></div>
 
         {/* Active filter badges (mobile) */}
         {(activeSize || activeColor || maxPrice < priceRange.max) && (

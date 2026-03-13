@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { Menu, ShoppingBag, Search, ChevronDown, X, LogOut, User } from "lucide-react";
+import { Menu, ShoppingBag, Search, ChevronDown, X, LogOut, User, Camera } from "lucide-react";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useProducts";
@@ -33,6 +33,22 @@ export default function Header() {
   const [scrolled, setScrolled] = useState(false);
   const [mobileSubmenu, setMobileSubmenu] = useState<string | null>(null);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout>>();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleVisualSearch = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = (reader.result as string).split(",")[1];
+      // Navigate to products with visual search
+      navigate(`/productos?visual=1`);
+      // Store in sessionStorage for the Products page to pick up
+      sessionStorage.setItem("visual-search-image", base64);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
 
   // Build dynamic nav links from categories
   const categoryChildren = [
@@ -188,15 +204,27 @@ export default function Header() {
           </Link>
         </div>
 
+        {/* Hidden file input for visual search */}
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="image/*"
+          className="hidden"
+          onChange={handleVisualSearch}
+        />
+
         {showDesktopSearch && (
           <div className="absolute inset-0 bg-card z-[60] flex items-center px-12 animate-fade-in">
             <form onSubmit={handleSearch} className="w-full flex items-center gap-4">
-              <Search className="w-6 h-6 text-muted-foreground" />
+              <Search className="w-5 h-5 text-muted-foreground" />
               <input autoFocus type="text" placeholder="¿Qué estás buscando?"
-                className="w-full text-2xl font-light outline-none bg-transparent font-display"
+                className="w-full text-xl font-light outline-none bg-transparent font-display tracking-wide"
                 value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+              <button type="button" onClick={() => fileInputRef.current?.click()} className="hover:text-accent transition-colors" title="Buscar por imagen">
+                <Camera className="w-5 h-5 text-muted-foreground hover:text-foreground" />
+              </button>
               <button type="button" onClick={() => setShowDesktopSearch(false)}>
-                <X className="w-8 h-8 text-muted-foreground hover:text-foreground transition-colors" />
+                <X className="w-6 h-6 text-muted-foreground hover:text-foreground transition-colors" />
               </button>
             </form>
           </div>
