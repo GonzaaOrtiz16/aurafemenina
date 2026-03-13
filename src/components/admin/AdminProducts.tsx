@@ -491,6 +491,17 @@ export default function AdminProducts() {
               ))}
             </div>
 
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleGenerateSeo}
+              disabled={generatingSeo || !form.name.trim()}
+              className="w-full gap-2 mb-3"
+            >
+              {generatingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+              Generar SEO automático
+            </Button>
+
             <Button onClick={handleSave} disabled={uploading} className="w-full bg-foreground text-background hover:bg-foreground/90 py-6 text-lg rounded-md">
               {uploading ? <Loader2 className="h-5 w-5 animate-spin mr-2" /> : <Save className="h-5 w-5 mr-2" />}
               {editing ? "Guardar Cambios" : "Publicar Producto"}
