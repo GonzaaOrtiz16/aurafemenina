@@ -62,6 +62,28 @@ export default function Products() {
     return () => clearTimeout(timer);
   }, [searchTerm, doAiSearch]);
 
+  // Visual search via sessionStorage
+  useEffect(() => {
+    const isVisual = searchParams.get("visual");
+    if (!isVisual) return;
+    const imageBase64 = sessionStorage.getItem("visual-search-image");
+    if (!imageBase64) return;
+    sessionStorage.removeItem("visual-search-image");
+    setVisualSearching(true);
+    fetch(GEMINI_URL, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+      },
+      body: JSON.stringify({ action: "visual-search", payload: { imageBase64 } }),
+    })
+      .then((r) => r.json())
+      .then((data) => setAiResultIds(data.ids || []))
+      .catch(() => setAiResultIds(null))
+      .finally(() => setVisualSearching(false));
+  }, [searchParams]);
+
   // Derive price range from products
   const priceRange = useMemo(() => {
     if (products.length === 0) return { min: 0, max: 100000 };
