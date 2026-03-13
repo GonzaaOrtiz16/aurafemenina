@@ -128,7 +128,7 @@ export default function AuraStylist() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 left-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] bg-background border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
+        <div className="fixed bottom-24 right-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] bg-background border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
           style={{ height: "min(480px, calc(100vh - 8rem))" }}
         >
           {/* Header */}
