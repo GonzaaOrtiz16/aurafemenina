@@ -291,18 +291,24 @@ export default function Products() {
             : "Todos los productos"}
         </h1>
         {aiSearching && searchTerm && (
-          <div className="flex items-center justify-center gap-2 mb-2">
+          <div className="flex items-center justify-center gap-2 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
-            <span className="text-xs text-muted-foreground">Buscando con inteligencia artificial...</span>
+            <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Buscando con inteligencia artificial...</span>
           </div>
         )}
-        {aiResultIds && aiResultIds.length > 0 && searchTerm && !aiSearching && (
-          <div className="flex items-center justify-center gap-2 mb-2">
+        {visualSearching && (
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <Camera className="h-3.5 w-3.5 text-accent animate-pulse" />
+            <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Analizando imagen...</span>
+          </div>
+        )}
+        {aiResultIds && aiResultIds.length > 0 && !aiSearching && !visualSearching && (
+          <div className="flex items-center justify-center gap-2 mb-3">
             <Sparkles className="h-3.5 w-3.5 text-accent" />
-            <span className="text-xs text-muted-foreground">Resultados mejorados con IA</span>
+            <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Resultados mejorados con IA</span>
           </div>
         )}
-        <div className="w-12 h-[1px] bg-accent/40 mx-auto mb-10"></div>
+        <div className="w-16 h-[1px] bg-accent/30 mx-auto mb-12"></div>
 
         {/* Active filter badges (mobile) */}
         {(activeSize || activeColor || maxPrice < priceRange.max) && (
