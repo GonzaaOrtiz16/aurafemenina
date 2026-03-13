@@ -43,6 +43,7 @@ export default function HeroSection() {
       <div className="relative z-10 h-full w-full flex flex-col justify-end px-6 md:px-24 pb-16 md:pb-24">
         <div className={`max-w-xl transition-all duration-1000 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
           <div className="backdrop-blur-sm bg-white/5 p-6 md:p-10 border border-white/10">
+          <div className="backdrop-blur-md bg-white/10 p-6 md:p-10 border border-white/20 rounded-sm shadow-2xl">
             <p className={`text-accent text-[10px] md:text-xs tracking-[0.5em] font-black uppercase mb-4 transition-all duration-700 delay-300 ${loaded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}>
               {h.tagline}
             </p>
@@ -50,7 +51,7 @@ export default function HeroSection() {
               <span className={`block transition-all duration-700 delay-500 ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>{h.title_line1}</span>
               <span className={`block font-display italic text-accent font-normal transition-all duration-700 delay-700 ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>{h.title_line2}</span>
             </h1>
-            <p className={`text-white/80 text-sm md:text-base font-medium max-w-sm leading-relaxed mb-8 transition-all duration-700 delay-[900ms] ${loaded ? "opacity-100" : "opacity-0"}`}>
+            <p className={`text-white/90 text-sm md:text-base font-medium max-w-sm leading-relaxed mb-8 transition-all duration-700 delay-[900ms] ${loaded ? "opacity-100" : "opacity-0"}`}>
               {h.subtitle}
             </p>
             <div className={`transition-all duration-700 delay-[1100ms] ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}>
