@@ -281,7 +281,7 @@ export default function Products() {
 
   return (
     <Layout>
-      <div className="container py-8">
+      <div className="container py-10 md:py-16 px-6 md:px-12">
         {/* Title */}
         <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-2 tracking-wide uppercase">
           {searchTerm
