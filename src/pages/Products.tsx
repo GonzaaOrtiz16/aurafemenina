@@ -260,13 +260,25 @@ export default function Products() {
     <Layout>
       <div className="container py-8">
         {/* Title */}
-        <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-4 tracking-wide uppercase">
+        <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-2 tracking-wide uppercase">
           {searchTerm
             ? `Resultados para: "${searchTerm}"`
             : activeCategory
             ? categories.find((c) => c.slug === activeCategory)?.name
             : "Todos los productos"}
         </h1>
+        {aiSearching && searchTerm && (
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="h-3.5 w-3.5 text-accent animate-pulse" />
+            <span className="text-xs text-muted-foreground">Buscando con inteligencia artificial...</span>
+          </div>
+        )}
+        {aiResultIds && aiResultIds.length > 0 && searchTerm && !aiSearching && (
+          <div className="flex items-center justify-center gap-2 mb-2">
+            <Sparkles className="h-3.5 w-3.5 text-accent" />
+            <span className="text-xs text-muted-foreground">Resultados mejorados con IA</span>
+          </div>
+        )}
         <div className="w-12 h-[1px] bg-accent/40 mx-auto mb-10"></div>
 
         {/* Active filter badges (mobile) */}
