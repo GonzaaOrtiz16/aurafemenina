@@ -120,7 +120,7 @@ export default function AuraStylist() {
       {/* Toggle button */}
       <button
         onClick={() => setOpen(!open)}
-        className="fixed bottom-6 left-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg hover:scale-110 transition-transform duration-200"
+        className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-foreground text-background shadow-lg hover:scale-110 transition-transform duration-200"
         aria-label="Aura Stylist"
       >
         {open ? <X className="h-6 w-6" /> : <Sparkles className="h-6 w-6" />}
@@ -128,7 +128,7 @@ export default function AuraStylist() {
 
       {/* Chat panel */}
       {open && (
-        <div className="fixed bottom-24 left-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] bg-background border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
+        <div className="fixed bottom-24 right-6 z-50 w-[340px] max-w-[calc(100vw-3rem)] bg-background border border-border rounded-lg shadow-2xl flex flex-col overflow-hidden animate-in slide-in-from-bottom-4 duration-300"
           style={{ height: "min(480px, calc(100vh - 8rem))" }}
         >
           {/* Header */}
