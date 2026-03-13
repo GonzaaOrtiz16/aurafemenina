@@ -123,6 +123,56 @@ export default function AdminProducts() {
     setForm({ ...form, images: form.images.filter((_, i) => i !== index) });
   };
 
+  const handleGenerateDescription = async () => {
+    if (!form.name.trim()) {
+      toast({ title: "Escribí el nombre del producto primero", variant: "destructive" });
+      return;
+    }
+    setGeneratingDesc(true);
+    try {
+      const catName = categories.find(c => c.id === form.category_id)?.name || "";
+      const resp = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ action: "generate-description", payload: { productName: form.name, category: catName } }),
+      });
+      const data = await resp.json();
+      if (data.description) {
+        setForm(prev => ({ ...prev, description: data.description }));
+        toast({ title: "Descripción generada ✨" });
+      }
+    } catch {
+      toast({ title: "Error generando descripción", variant: "destructive" });
+    }
+    setGeneratingDesc(false);
+  };
+
+  const handleGenerateSeo = async () => {
+    if (!form.name.trim()) return;
+    setGeneratingSeo(true);
+    try {
+      const catName = categories.find(c => c.id === form.category_id)?.name || "";
+      const resp = await fetch(GEMINI_URL, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
+        },
+        body: JSON.stringify({ action: "generate-seo", payload: { productName: form.name, description: form.description, category: catName } }),
+      });
+      const data = await resp.json();
+      if (data.metaTitle || data.metaDescription) {
+        toast({ title: "SEO generado ✨", description: `Título: ${data.metaTitle || "-"}\nDesc: ${data.metaDescription || "-"}` });
+      }
+    } catch {
+      toast({ title: "Error generando SEO", variant: "destructive" });
+    }
+    setGeneratingSeo(false);
+  };
+
   const handleSave = async () => {
     const slug = form.slug || generateSlug(form.name);
     // Build aggregated sizes from all color variants
