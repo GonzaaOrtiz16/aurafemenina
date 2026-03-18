@@ -1,5 +1,5 @@
 import { memo } from "react";
-import { X } from "lucide-react";
+import { X, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
 
 interface FilterColor {
@@ -7,9 +7,18 @@ interface FilterColor {
   hex: string;
 }
 
+interface Subcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+}
+
 interface FilterPanelProps {
-  categories: Array<{ slug: string; name: string }>;
+  categories: Array<{ id?: string; slug: string; name: string }>;
+  subcategories?: Subcategory[];
   activeCategory: string;
+  activeSubcategory?: string;
   activeSize: string;
   activeColor: string;
   maxPrice: number;
@@ -17,6 +26,7 @@ interface FilterPanelProps {
   availableColors: FilterColor[];
   hasActiveFilters: boolean;
   onCategoryChange: (slug: string) => void;
+  onSubcategoryChange?: (slug: string) => void;
   onSizeChange: (size: string) => void;
   onColorChange: (color: string) => void;
   onMaxPriceChange: (price: number) => void;
@@ -27,7 +37,9 @@ const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "34", "36", "38", "40", "42
 
 function FilterPanel({
   categories,
+  subcategories = [],
   activeCategory,
+  activeSubcategory = "",
   activeSize,
   activeColor,
   maxPrice,
@@ -35,11 +47,18 @@ function FilterPanel({
   availableColors,
   hasActiveFilters,
   onCategoryChange,
+  onSubcategoryChange,
   onSizeChange,
   onColorChange,
   onMaxPriceChange,
   onClearFilters,
 }: FilterPanelProps) {
+  // Find the active category's id to filter subcategories
+  const activeCatObj = categories.find(c => c.slug === activeCategory);
+  const filteredSubs = activeCatObj?.id
+    ? subcategories.filter(s => s.category_id === activeCatObj.id)
+    : [];
+
   return (
     <div className="space-y-8">
       {/* Categories */}
@@ -73,6 +92,40 @@ function FilterPanel({
           ))}
         </div>
       </div>
+
+      {/* Subcategories (when a category is active) */}
+      {filteredSubs.length > 0 && onSubcategoryChange && (
+        <div>
+          <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4 flex items-center gap-1">
+            <ChevronRight className="h-3 w-3" /> Subcategorías
+          </h3>
+          <div className="flex flex-col gap-1">
+            <button
+              onClick={() => onSubcategoryChange("")}
+              className={`text-left px-3 py-2 font-body text-[11px] uppercase tracking-wider transition-colors rounded-sm ${
+                !activeSubcategory
+                  ? "bg-foreground text-background font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+              }`}
+            >
+              Todas
+            </button>
+            {filteredSubs.map((sub) => (
+              <button
+                key={sub.slug}
+                onClick={() => onSubcategoryChange(sub.slug)}
+                className={`text-left px-3 py-2 font-body text-[11px] uppercase tracking-wider transition-colors rounded-sm ${
+                  activeSubcategory === sub.slug
+                    ? "bg-foreground text-background font-bold"
+                    : "text-muted-foreground hover:text-foreground hover:bg-secondary"
+                }`}
+              >
+                {sub.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* Sizes */}
       <div>
