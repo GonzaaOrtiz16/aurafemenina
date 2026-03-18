@@ -7,7 +7,6 @@ import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useScrollAnimation } from "@/hooks/useScrollAnimation";
 import { Sparkles } from "lucide-react";
-import { motion } from "framer-motion";
 
 export default function Index() {
   const { data: featured = [], isLoading: loadingProducts } = useFeaturedProducts();

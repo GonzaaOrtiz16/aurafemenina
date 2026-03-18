@@ -1,39 +1,37 @@
+import { memo, useState } from "react";
 import { Link } from "react-router-dom";
 import { Product } from "@/types/product";
 import { formatPrice } from "@/lib/shipping";
 import { Badge } from "@/components/ui/badge";
-import { motion } from "framer-motion";
 
 interface ProductCardProps {
   product: Product;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+function ProductCard({ product }: ProductCardProps) {
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 16 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
+    <div
+      className={`transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
     >
-      <Link
-        to={`/producto/${product.slug}`}
-        className="group block"
-      >
+      <Link to={`/producto/${product.slug}`} className="group block">
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
-          {/* Primary image */}
           <img
             src={product.images[0]}
             alt={product.name}
-            className="h-full w-full object-cover transition-all duration-700 ease-out group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.03]"
             loading="lazy"
+            decoding="async"
+            onLoad={() => setImgLoaded(true)}
           />
-          {/* Second image on hover (crossfade) */}
           {product.images[1] && (
             <img
               src={product.images[1]}
               alt={product.name}
               className="absolute inset-0 h-full w-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out"
               loading="lazy"
+              decoding="async"
             />
           )}
           {product.isNew && (
@@ -59,6 +57,8 @@ export default function ProductCard({ product }: ProductCardProps) {
           </div>
         </div>
       </Link>
-    </motion.div>
+    </div>
   );
 }
+
+export default memo(ProductCard);

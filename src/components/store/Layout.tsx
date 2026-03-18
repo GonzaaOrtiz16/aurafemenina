@@ -1,8 +1,11 @@
+import { lazy, Suspense } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
-import WhatsAppButton from "./WhatsAppButton";
-import AuraStylist from "./AuraStylist";
 import PageTransition from "./PageTransition";
+
+// Lazy load heavy floating components - they aren't needed for first paint
+const WhatsAppButton = lazy(() => import("./WhatsAppButton"));
+const AuraStylist = lazy(() => import("./AuraStylist"));
 
 export default function Layout({ children }: { children: React.ReactNode }) {
   return (
@@ -12,8 +15,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         <PageTransition>{children}</PageTransition>
       </main>
       <Footer />
-      <WhatsAppButton />
-      <AuraStylist />
+      <Suspense fallback={null}>
+        <WhatsAppButton />
+        <AuraStylist />
+      </Suspense>
     </div>
   );
 }

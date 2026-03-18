@@ -1,14 +1,12 @@
 import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import ProductCard from "@/components/store/ProductCard";
+import FilterPanel from "@/components/store/filters/FilterPanel";
 import { useProducts, useCategories } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Input } from "@/components/ui/input";
-import { X, Sparkles, Loader2, Camera } from "lucide-react";
+import { Sparkles, Camera } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
 import { Product } from "@/types/product";
-
-const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "34", "36", "38", "40", "42", "44"];
 
 const GEMINI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
 
@@ -52,17 +50,13 @@ export default function Products() {
     setAiSearching(false);
   }, []);
 
-  // Debounce AI search
   useEffect(() => {
-    if (!searchTerm) {
-      setAiResultIds(null);
-      return;
-    }
+    if (!searchTerm) { setAiResultIds(null); return; }
     const timer = setTimeout(() => doAiSearch(searchTerm), 800);
     return () => clearTimeout(timer);
   }, [searchTerm, doAiSearch]);
 
-  // Visual search via sessionStorage
+  // Visual search
   useEffect(() => {
     const isVisual = searchParams.get("visual");
     if (!isVisual) return;
@@ -84,33 +78,26 @@ export default function Products() {
       .finally(() => setVisualSearching(false));
   }, [searchParams]);
 
-  // Derive price range from products
   const priceRange = useMemo(() => {
     if (products.length === 0) return { min: 0, max: 100000 };
     const prices = products.map((p) => p.price);
     return { min: Math.min(...prices), max: Math.max(...prices) };
   }, [products]);
 
-  // Extract unique colors from all products
   const availableColors = useMemo(() => {
     const colorMap = new Map<string, string>();
     products.forEach((p) => {
       const colores = (p.colores || []) as Array<{ nombre?: string; hex?: string }>;
       colores.forEach((c) => {
-        if (c.nombre && c.hex && !colorMap.has(c.nombre)) {
-          colorMap.set(c.nombre, c.hex);
-        }
+        if (c.nombre && c.hex && !colorMap.has(c.nombre)) colorMap.set(c.nombre, c.hex);
       });
     });
     return Array.from(colorMap.entries()).map(([nombre, hex]) => ({ nombre, hex }));
   }, [products]);
 
-  // Filtering
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => {
-      const matchesSearch = searchTerm
-        ? product.name.toLowerCase().includes(searchTerm)
-        : true;
+      const matchesSearch = searchTerm ? product.name.toLowerCase().includes(searchTerm) : true;
       const matchesSize = activeSize
         ? product.sizes?.some((s: string) => s.toUpperCase() === activeSize.toUpperCase())
         : true;
@@ -123,12 +110,9 @@ export default function Products() {
       return matchesSearch && matchesSize && matchesPrice && matchesColor;
     });
 
-    // If AI search returned results, reorder by AI relevance
     if (aiResultIds && aiResultIds.length > 0 && searchTerm) {
       const idSet = new Set(aiResultIds);
-      const aiMatches = aiResultIds
-        .map((id) => result.find((p) => p.id === id))
-        .filter(Boolean) as Product[];
+      const aiMatches = aiResultIds.map((id) => result.find((p) => p.id === id)).filter(Boolean) as Product[];
       const rest = result.filter((p) => !idSet.has(p.id));
       result = [...aiMatches, ...rest];
     }
@@ -136,148 +120,24 @@ export default function Products() {
     return result;
   }, [products, searchTerm, activeSize, maxPrice, activeColor, aiResultIds]);
 
-  const handleCategory = (slug: string) => {
-    if (slug === activeCategory) {
+  const handleCategory = useCallback((slug: string) => {
+    if (!slug || slug === activeCategory) {
       setSearchParams({});
     } else {
       const newParams: Record<string, string> = { categoria: slug };
       if (searchTerm) newParams.search = searchTerm;
       setSearchParams(newParams);
     }
-  };
+  }, [activeCategory, searchTerm, setSearchParams]);
 
-  const clearFilters = () => {
+  const clearFilters = useCallback(() => {
     setActiveSize("");
     setActiveColor("");
     setMaxPrice(priceRange.max);
     setSearchParams({});
-  };
+  }, [priceRange.max, setSearchParams]);
 
-  const hasActiveFilters = activeSize || activeColor || maxPrice < priceRange.max || activeCategory || searchTerm;
-
-  // Sidebar filter panel (shared between mobile & desktop)
-  const FilterPanel = () => (
-    <div className="space-y-8">
-      {/* Categories */}
-      <div>
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-          Categorías
-        </h3>
-        <div className="flex flex-col gap-1">
-          <button
-            onClick={() => setSearchParams({})}
-            className={`text-left px-3 py-2 font-body text-[11px] uppercase tracking-wider transition-colors rounded-sm ${
-              !activeCategory
-                ? "bg-foreground text-background font-bold"
-                : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-            }`}
-          >
-            Todos
-          </button>
-          {categories.map((cat) => (
-            <button
-              key={cat.slug}
-              onClick={() => handleCategory(cat.slug)}
-              className={`text-left px-3 py-2 font-body text-[11px] uppercase tracking-wider transition-colors rounded-sm ${
-                activeCategory === cat.slug
-                  ? "bg-foreground text-background font-bold"
-                  : "text-muted-foreground hover:text-foreground hover:bg-secondary"
-              }`}
-            >
-              {cat.name}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Sizes */}
-      <div>
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-          Talle
-        </h3>
-        <div className="grid grid-cols-4 gap-2">
-          {ALL_SIZES.map((size) => (
-            <button
-              key={size}
-              onClick={() => setActiveSize(activeSize === size ? "" : size)}
-              className={`aspect-square flex items-center justify-center border text-[10px] font-bold uppercase tracking-wider transition-all duration-200 rounded-sm ${
-                activeSize === size
-                  ? "bg-foreground text-background border-foreground"
-                  : "border-border text-muted-foreground hover:border-foreground hover:text-foreground"
-              }`}
-            >
-              {size}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Colors */}
-      {availableColors.length > 0 && (
-        <div>
-          <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-            Color
-          </h3>
-          <div className="flex flex-wrap gap-3">
-            {availableColors.map((color) => (
-              <button
-                key={color.nombre}
-                onClick={() => setActiveColor(activeColor === color.nombre ? "" : color.nombre)}
-                title={color.nombre}
-                className={`w-8 h-8 rounded-full border-2 transition-all p-[2px] ${
-                  activeColor === color.nombre ? "border-foreground scale-110" : "border-transparent"
-                }`}
-              >
-                <div className="w-full h-full rounded-full border border-border/30" style={{ backgroundColor: color.hex }} />
-              </button>
-            ))}
-          </div>
-          {activeColor && (
-            <p className="font-body text-xs text-muted-foreground mt-2 capitalize">{activeColor}</p>
-          )}
-        </div>
-      )}
-
-      {/* Price Range */}
-      <div>
-        <h3 className="font-body text-[10px] font-bold uppercase tracking-[0.2em] text-muted-foreground mb-4">
-          Precio máximo
-        </h3>
-        <div className="flex items-center gap-2">
-          <span className="font-body text-sm text-muted-foreground">$</span>
-          <Input
-            type="number"
-            value={maxPrice === priceRange.max ? "" : maxPrice}
-            onChange={(e) => {
-              const val = e.target.value;
-              if (val === "") {
-                setMaxPrice(priceRange.max);
-              } else {
-                setMaxPrice(Math.max(0, Number(val)));
-              }
-            }}
-            placeholder={priceRange.max.toLocaleString("es-AR")}
-            className="font-body text-sm h-10"
-          />
-        </div>
-        {maxPrice < priceRange.max && (
-          <p className="font-body text-xs text-muted-foreground mt-2">
-            Hasta <span className="font-bold text-foreground">${maxPrice.toLocaleString("es-AR")}</span>
-          </p>
-        )}
-      </div>
-
-      {/* Clear */}
-      {hasActiveFilters && (
-        <button
-          onClick={clearFilters}
-          className="flex items-center gap-1.5 font-body text-[10px] uppercase tracking-wider text-accent hover:underline"
-        >
-          <X className="w-3 h-3" /> Limpiar filtros
-        </button>
-      )}
-    </div>
-  );
+  const hasActiveFilters = !!(activeSize || activeColor || maxPrice < priceRange.max || activeCategory || searchTerm);
 
   return (
     <Layout>
@@ -308,7 +168,7 @@ export default function Products() {
             <span className="text-[10px] text-muted-foreground tracking-wider uppercase">Resultados mejorados con IA</span>
           </div>
         )}
-        <div className="w-16 h-[1px] bg-accent/30 mx-auto mb-12"></div>
+        <div className="w-16 h-[1px] bg-accent/30 mx-auto mb-12" />
 
         {/* Active filter badges (mobile) */}
         {(activeSize || activeColor || maxPrice < priceRange.max) && (
@@ -335,7 +195,21 @@ export default function Products() {
         <div className="flex gap-10">
           {/* Desktop Sidebar */}
           <aside className="hidden md:block w-56 shrink-0 sticky top-32 self-start">
-            <FilterPanel />
+            <FilterPanel
+              categories={categories}
+              activeCategory={activeCategory}
+              activeSize={activeSize}
+              activeColor={activeColor}
+              maxPrice={maxPrice}
+              priceRange={priceRange}
+              availableColors={availableColors}
+              hasActiveFilters={hasActiveFilters}
+              onCategoryChange={handleCategory}
+              onSizeChange={setActiveSize}
+              onColorChange={setActiveColor}
+              onMaxPriceChange={setMaxPrice}
+              onClearFilters={clearFilters}
+            />
           </aside>
 
           {/* Product Grid */}
@@ -386,10 +260,7 @@ export default function Products() {
                 <p className="text-muted-foreground font-body mb-4">
                   No encontramos productos que coincidan con tu búsqueda.
                 </p>
-                <button
-                  onClick={clearFilters}
-                  className="text-xs font-bold uppercase underline"
-                >
+                <button onClick={clearFilters} className="text-xs font-bold uppercase underline">
                   Ver toda la colección
                 </button>
               </div>

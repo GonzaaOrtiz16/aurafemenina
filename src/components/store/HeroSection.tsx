@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
-import { motion } from "framer-motion";
 
 interface HeroData {
   image: string;
@@ -25,7 +24,7 @@ export default function HeroSection() {
   };
 
   useEffect(() => {
-    const timer = setTimeout(() => setLoaded(true), 100);
+    const timer = setTimeout(() => setLoaded(true), 50);
     return () => clearTimeout(timer);
   }, []);
 
@@ -35,60 +34,50 @@ export default function HeroSection() {
         <img
           src={h.image}
           alt="Modelo Aura Femenina"
-          className={`w-full h-full object-cover transition-transform duration-[2500ms] ease-out ${loaded ? "scale-100" : "scale-110"}`}
-          loading="eager"
+          className={`w-full h-full object-cover transition-transform duration-[2000ms] ease-out will-change-transform ${loaded ? "scale-100" : "scale-105"}`}
+          fetchPriority="high"
+          decoding="sync"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
       </div>
 
       <div className="relative z-10 h-full w-full flex flex-col justify-end px-8 md:px-20 lg:px-28 pb-20 md:pb-28">
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={loaded ? { opacity: 1, y: 0 } : {}}
-          transition={{ duration: 1, delay: 0.3, ease: [0.22, 1, 0.36, 1] }}
-          className="max-w-2xl"
+        <div
+          className={`max-w-2xl transition-all duration-1000 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+          style={{ transitionDelay: "200ms" }}
         >
-          <motion.p
-            initial={{ opacity: 0, x: -20 }}
-            animate={loaded ? { opacity: 1, x: 0 } : {}}
-            transition={{ duration: 0.7, delay: 0.5 }}
-            className="text-accent text-[10px] md:text-xs tracking-[0.6em] font-bold uppercase mb-6"
+          <p
+            className={`text-accent text-[10px] md:text-xs tracking-[0.6em] font-bold uppercase mb-6 transition-all duration-700 ${loaded ? "opacity-100 translate-x-0" : "opacity-0 -translate-x-4"}`}
+            style={{ transitionDelay: "400ms" }}
           >
             {h.tagline}
-          </motion.p>
+          </p>
 
           <h1 className="font-display text-5xl md:text-7xl lg:text-8xl font-light text-white tracking-tight leading-[0.95] mb-8">
-            <motion.span
-              initial={{ opacity: 0, y: 30 }}
-              animate={loaded ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.6 }}
-              className="block"
+            <span
+              className={`block transition-all duration-800 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+              style={{ transitionDelay: "500ms" }}
             >
               {h.title_line1}
-            </motion.span>
-            <motion.span
-              initial={{ opacity: 0, y: 30 }}
-              animate={loaded ? { opacity: 1, y: 0 } : {}}
-              transition={{ duration: 0.8, delay: 0.8 }}
-              className="block font-display italic text-accent font-normal"
+            </span>
+            <span
+              className={`block font-display italic text-accent font-normal transition-all duration-800 ease-out ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
+              style={{ transitionDelay: "700ms" }}
             >
               {h.title_line2}
-            </motion.span>
+            </span>
           </h1>
 
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={loaded ? { opacity: 1 } : {}}
-            transition={{ duration: 0.8, delay: 1 }}
-            className="text-white/80 text-sm md:text-base font-light max-w-md leading-relaxed mb-10"
+          <p
+            className={`text-white/80 text-sm md:text-base font-light max-w-md leading-relaxed mb-10 transition-opacity duration-800 ${loaded ? "opacity-100" : "opacity-0"}`}
+            style={{ transitionDelay: "900ms" }}
           >
             {h.subtitle}
-          </motion.p>
+          </p>
 
-          <motion.div
-            initial={{ opacity: 0, y: 16 }}
-            animate={loaded ? { opacity: 1, y: 0 } : {}}
-            transition={{ duration: 0.6, delay: 1.2 }}
+          <div
+            className={`transition-all duration-600 ${loaded ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"}`}
+            style={{ transitionDelay: "1100ms" }}
           >
             <Link to="/productos">
               <Button
@@ -98,19 +87,17 @@ export default function HeroSection() {
                 {h.button_text}
               </Button>
             </Link>
-          </motion.div>
-        </motion.div>
+          </div>
+        </div>
       </div>
 
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={loaded ? { opacity: 0.4 } : {}}
-        transition={{ delay: 1.8, duration: 1 }}
-        className="absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2"
+      <div
+        className={`absolute bottom-8 left-1/2 -translate-x-1/2 z-20 flex flex-col items-center gap-2 transition-opacity duration-1000 ${loaded ? "opacity-40" : "opacity-0"}`}
+        style={{ transitionDelay: "1600ms" }}
       >
         <div className="w-px h-10 bg-white animate-pulse" />
         <p className="text-[7px] text-white tracking-[0.4em] uppercase font-bold">Scroll</p>
-      </motion.div>
+      </div>
     </section>
   );
 }

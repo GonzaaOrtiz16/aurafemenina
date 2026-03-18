@@ -25,7 +25,6 @@ interface DbCategory {
 }
 
 function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: string): Product {
-  // Derive all available sizes from colores variants or fallback to sizes column
   const colores = (p.colores as any[]) || [];
   const hasVariants = colores.length > 0 && colores.some((c: any) => c.sizes && Object.keys(c.sizes).length > 0);
 
@@ -67,6 +66,7 @@ export function useCategories() {
       if (error) throw error;
       return data as DbCategory[];
     },
+    staleTime: 5 * 60 * 1000, // categories rarely change
   });
 }
 
@@ -86,14 +86,11 @@ export function useProducts(categorySlug?: string) {
       const { data, error } = await query;
       if (error) throw error;
 
-      const products = (data as any[])
+      return (data as any[])
         .filter((p) => !categorySlug || p.categories)
-        .map((p) =>
-          dbProductToProduct(p, p.categories?.name, p.categories?.slug)
-        );
-
-      return products;
+        .map((p) => dbProductToProduct(p, p.categories?.name, p.categories?.slug));
     },
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -111,6 +108,7 @@ export function useFeaturedProducts() {
         dbProductToProduct(p, p.categories?.name, p.categories?.slug)
       );
     },
+    staleTime: 2 * 60 * 1000,
   });
 }
 
@@ -120,7 +118,7 @@ export function useProductBySlug(slug: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, categories(name, slug)") // El "*" ya trae la columna colores de SQL
+        .select("*, categories(name, slug)")
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
@@ -128,5 +126,6 @@ export function useProductBySlug(slug: string) {
       return dbProductToProduct(data as any, (data as any).categories?.name, (data as any).categories?.slug);
     },
     enabled: !!slug,
+    staleTime: 2 * 60 * 1000,
   });
 }
