@@ -10,6 +10,7 @@ interface DbProduct {
   price: number;
   original_price: number | null;
   category_id: string | null;
+  subcategory_id: string | null;
   sizes: Record<string, number>;
   images: string[];
   featured: boolean;
@@ -24,7 +25,14 @@ interface DbCategory {
   slug: string;
 }
 
-function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: string): Product {
+interface DbSubcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+}
+
+function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: string, subcategoryName?: string, subcategorySlug?: string): Product {
   const colores = (p.colores as any[]) || [];
   const hasVariants = colores.length > 0 && colores.some((c: any) => c.sizes && Object.keys(c.sizes).length > 0);
 
@@ -47,6 +55,8 @@ function dbProductToProduct(p: DbProduct, categoryName?: string, categorySlug?: 
     originalPrice: p.original_price ? Number(p.original_price) : undefined,
     category: categoryName || "",
     categorySlug: categorySlug || "",
+    subcategory: subcategoryName || "",
+    subcategorySlug: subcategorySlug || "",
     sizes: allSizes,
     images: p.images || [],
     description: p.description || "",
@@ -66,7 +76,21 @@ export function useCategories() {
       if (error) throw error;
       return data as DbCategory[];
     },
-    staleTime: 5 * 60 * 1000, // categories rarely change
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useSubcategories(categoryId?: string) {
+  return useQuery({
+    queryKey: ["subcategories", categoryId],
+    queryFn: async () => {
+      let query = supabase.from("subcategories").select("*").order("name");
+      if (categoryId) query = query.eq("category_id", categoryId);
+      const { data, error } = await query;
+      if (error) throw error;
+      return data as DbSubcategory[];
+    },
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -76,7 +100,7 @@ export function useProducts(categorySlug?: string) {
     queryFn: async () => {
       let query = supabase
         .from("products")
-        .select("*, categories(name, slug)")
+        .select("*, categories(name, slug), subcategories(name, slug)")
         .order("created_at", { ascending: false });
 
       if (categorySlug) {
@@ -88,7 +112,7 @@ export function useProducts(categorySlug?: string) {
 
       return (data as any[])
         .filter((p) => !categorySlug || p.categories)
-        .map((p) => dbProductToProduct(p, p.categories?.name, p.categories?.slug));
+        .map((p) => dbProductToProduct(p, p.categories?.name, p.categories?.slug, p.subcategories?.name, p.subcategories?.slug));
     },
     staleTime: 2 * 60 * 1000,
   });
@@ -100,12 +124,12 @@ export function useFeaturedProducts() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, categories(name, slug)")
+        .select("*, categories(name, slug), subcategories(name, slug)")
         .eq("featured", true)
         .order("created_at", { ascending: false });
       if (error) throw error;
       return (data as any[]).map((p) =>
-        dbProductToProduct(p, p.categories?.name, p.categories?.slug)
+        dbProductToProduct(p, p.categories?.name, p.categories?.slug, p.subcategories?.name, p.subcategories?.slug)
       );
     },
     staleTime: 2 * 60 * 1000,
@@ -118,12 +142,12 @@ export function useProductBySlug(slug: string) {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("products")
-        .select("*, categories(name, slug)")
+        .select("*, categories(name, slug), subcategories(name, slug)")
         .eq("slug", slug)
         .maybeSingle();
       if (error) throw error;
       if (!data) return null;
-      return dbProductToProduct(data as any, (data as any).categories?.name, (data as any).categories?.slug);
+      return dbProductToProduct(data as any, (data as any).categories?.name, (data as any).categories?.slug, (data as any).subcategories?.name, (data as any).subcategories?.slug);
     },
     enabled: !!slug,
     staleTime: 2 * 60 * 1000,

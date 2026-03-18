@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { formatPrice } from "@/lib/shipping";
-import { Plus, Pencil, Trash2, X, Save, Palette, Image as ImageIcon, Loader2, Upload, Sparkles } from "lucide-react";
+import { Plus, Pencil, Trash2, X, Save, Palette, Image as ImageIcon, Loader2, Upload, Sparkles, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
@@ -26,6 +26,7 @@ interface DbProduct {
   price: number;
   original_price: number | null;
   category_id: string | null;
+  subcategory_id: string | null;
   sizes: Record<string, number>;
   images: string[];
   colores?: ColorVariant[];
@@ -38,12 +39,20 @@ interface DbCategory {
   slug: string;
 }
 
+interface DbSubcategory {
+  id: string;
+  category_id: string;
+  name: string;
+  slug: string;
+}
+
 const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "28", "30", "32", "34", "36", "38", "40", "42", "44"];
 
 export default function AdminProducts() {
   const { toast } = useToast();
   const [products, setProducts] = useState<DbProduct[]>([]);
   const [categories, setCategories] = useState<DbCategory[]>([]);
+  const [subcategories, setSubcategories] = useState<DbSubcategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editing, setEditing] = useState<DbProduct | null>(null);
@@ -52,10 +61,12 @@ export default function AdminProducts() {
   const [generatingSeo, setGeneratingSeo] = useState(false);
   const [catDialogOpen, setCatDialogOpen] = useState(false);
   const [newCatName, setNewCatName] = useState("");
+  const [newSubcatName, setNewSubcatName] = useState("");
+  const [subcatParentId, setSubcatParentId] = useState("");
 
   const [form, setForm] = useState({
     name: "", slug: "", description: "", price: "", original_price: "",
-    category_id: "", featured: false, images: [] as string[],
+    category_id: "", subcategory_id: "", featured: false, images: [] as string[],
     colores: [] as ColorVariant[],
   });
 
@@ -63,12 +74,14 @@ export default function AdminProducts() {
 
   const fetchData = async () => {
     setLoading(true);
-    const [{ data: prods }, { data: cats }] = await Promise.all([
+    const [{ data: prods }, { data: cats }, { data: subs }] = await Promise.all([
       supabase.from("products").select("*").order("created_at", { ascending: false }),
       supabase.from("categories").select("*").order("name"),
+      supabase.from("subcategories").select("*").order("name"),
     ]);
     setProducts((prods as unknown as DbProduct[]) || []);
     setCategories((cats as DbCategory[]) || []);
+    setSubcategories((subs as DbSubcategory[]) || []);
     setLoading(false);
   };
 
@@ -77,13 +90,12 @@ export default function AdminProducts() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", description: "", price: "", original_price: "", category_id: "", featured: false, images: [], colores: [] });
+    setForm({ name: "", slug: "", description: "", price: "", original_price: "", category_id: "", subcategory_id: "", featured: false, images: [], colores: [] });
     setDialogOpen(true);
   };
 
   const openEdit = (p: DbProduct) => {
     setEditing(p);
-    // Migrate old format: if colores don't have sizes, merge from product.sizes
     const migratedColores = (p.colores || []).map((c: any) => ({
       nombre: c.nombre || "",
       hex: c.hex || "#000000",
@@ -92,7 +104,7 @@ export default function AdminProducts() {
     setForm({
       name: p.name, slug: p.slug, description: p.description || "",
       price: String(p.price), original_price: p.original_price ? String(p.original_price) : "",
-      category_id: p.category_id || "", featured: p.featured,
+      category_id: p.category_id || "", subcategory_id: p.subcategory_id || "", featured: p.featured,
       images: p.images || [], colores: migratedColores,
     });
     setDialogOpen(true);
@@ -131,13 +143,14 @@ export default function AdminProducts() {
     setGeneratingDesc(true);
     try {
       const catName = categories.find(c => c.id === form.category_id)?.name || "";
+      const subName = subcategories.find(s => s.id === form.subcategory_id)?.name || "";
       const resp = await fetch(GEMINI_URL, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
         },
-        body: JSON.stringify({ action: "generate-description", payload: { productName: form.name, category: catName } }),
+        body: JSON.stringify({ action: "generate-description", payload: { productName: form.name, category: catName, subcategory: subName } }),
       });
       const data = await resp.json();
       if (data.description) {
@@ -175,7 +188,6 @@ export default function AdminProducts() {
 
   const handleSave = async () => {
     const slug = form.slug || generateSlug(form.name);
-    // Build aggregated sizes from all color variants
     const aggregatedSizes: Record<string, number> = {};
     form.colores.forEach((c) => {
       Object.entries(c.sizes).forEach(([size, stock]) => {
@@ -187,7 +199,9 @@ export default function AdminProducts() {
       name: form.name, slug, description: form.description || null,
       price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
-      category_id: form.category_id || null, featured: form.featured,
+      category_id: form.category_id || null,
+      subcategory_id: form.subcategory_id || null,
+      featured: form.featured,
       images: form.images, colores: form.colores, sizes: aggregatedSizes,
     };
 
@@ -234,6 +248,7 @@ export default function AdminProducts() {
   };
 
   const getCategoryName = (id: string | null) => categories.find((c) => c.id === id)?.name || "-";
+  const getSubcategoryName = (id: string | null) => subcategories.find((s) => s.id === id)?.name || "";
   const getTotalStock = (p: DbProduct) => {
     if (p.colores && p.colores.length > 0) {
       return p.colores.reduce((sum, c: any) => {
@@ -244,6 +259,9 @@ export default function AdminProducts() {
     return p.sizes ? Object.values(p.sizes).reduce((a, b) => a + b, 0) : 0;
   };
 
+  const filteredSubcategories = subcategories.filter(s => s.category_id === form.category_id);
+
+  // Category CRUD
   const handleAddCategory = async () => {
     if (!newCatName.trim()) return;
     const slug = generateSlug(newCatName);
@@ -251,7 +269,6 @@ export default function AdminProducts() {
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Categoría creada" });
     setNewCatName("");
-    setCatDialogOpen(false);
     fetchData();
   };
 
@@ -260,6 +277,25 @@ export default function AdminProducts() {
     const { error } = await supabase.from("categories").delete().eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Categoría eliminada" });
+    fetchData();
+  };
+
+  // Subcategory CRUD
+  const handleAddSubcategory = async () => {
+    if (!newSubcatName.trim() || !subcatParentId) return;
+    const slug = generateSlug(newSubcatName);
+    const { error } = await supabase.from("subcategories").insert({ name: newSubcatName.trim(), slug, category_id: subcatParentId });
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Subcategoría creada" });
+    setNewSubcatName("");
+    fetchData();
+  };
+
+  const handleDeleteSubcategory = async (id: string) => {
+    if (!confirm("¿Eliminar esta subcategoría?")) return;
+    const { error } = await supabase.from("subcategories").delete().eq("id", id);
+    if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
+    toast({ title: "Subcategoría eliminada" });
     fetchData();
   };
 
@@ -306,7 +342,14 @@ export default function AdminProducts() {
                       </div>
                     </div>
                   </td>
-                  <td className="p-3 hidden md:table-cell text-muted-foreground">{getCategoryName(p.category_id)}</td>
+                  <td className="p-3 hidden md:table-cell text-muted-foreground">
+                    <span>{getCategoryName(p.category_id)}</span>
+                    {p.subcategory_id && (
+                      <span className="flex items-center gap-0.5 text-[10px]">
+                        <ChevronRight className="h-3 w-3" />{getSubcategoryName(p.subcategory_id)}
+                      </span>
+                    )}
+                  </td>
                   <td className="p-3 text-right hidden md:table-cell text-muted-foreground">{getTotalStock(p)} u.</td>
                   <td className="p-3 text-right">
                     <div>
@@ -346,14 +389,7 @@ export default function AdminProducts() {
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-sm font-medium">Descripción</label>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleGenerateDescription}
-                    disabled={generatingDesc}
-                    className="text-xs gap-1"
-                  >
+                  <Button type="button" variant="outline" size="sm" onClick={handleGenerateDescription} disabled={generatingDesc} className="text-xs gap-1">
                     {generatingDesc ? <Loader2 className="h-3 w-3 animate-spin" /> : <Sparkles className="h-3 w-3" />}
                     Generar con IA
                   </Button>
@@ -373,13 +409,25 @@ export default function AdminProducts() {
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Categoría</label>
-                <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v })}>
+                <Select value={form.category_id} onValueChange={(v) => setForm({ ...form, category_id: v, subcategory_id: "" })}>
                   <SelectTrigger><SelectValue placeholder="Seleccionar" /></SelectTrigger>
                   <SelectContent>
                     {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                   </SelectContent>
                 </Select>
               </div>
+              {filteredSubcategories.length > 0 && (
+                <div>
+                  <label className="text-sm font-medium mb-1 block">Subcategoría</label>
+                  <Select value={form.subcategory_id} onValueChange={(v) => setForm({ ...form, subcategory_id: v === "none" ? "" : v })}>
+                    <SelectTrigger><SelectValue placeholder="Sin subcategoría" /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Sin subcategoría</SelectItem>
+                      {filteredSubcategories.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
               <div className="flex items-center gap-3 bg-secondary/20 p-3 rounded-md">
                 <Switch checked={form.featured} onCheckedChange={(v) => setForm({ ...form, featured: v })} />
                 <label className="text-sm">Producto destacado (aparece en inicio)</label>
@@ -420,7 +468,7 @@ export default function AdminProducts() {
                 <label className="text-sm font-medium flex items-center gap-2"><Palette className="h-4 w-4" /> Colores, Talles y Stock</label>
                 <Button type="button" variant="outline" size="sm" onClick={addColor} className="text-xs gap-1"><Plus className="h-3 w-3" /> Color</Button>
               </div>
-              <p className="text-[10px] text-muted-foreground -mt-2">Cada color tiene sus propios talles y stock. Al elegir un color en la tienda, solo se muestran los talles disponibles para ese color.</p>
+              <p className="text-[10px] text-muted-foreground -mt-2">Cada color tiene sus propios talles y stock.</p>
 
               {form.colores.length === 0 && (
                 <div className="py-4 border-2 border-dashed border-border rounded-md text-center text-xs text-muted-foreground">
@@ -430,59 +478,28 @@ export default function AdminProducts() {
 
               {form.colores.map((color, cIdx) => (
                 <div key={cIdx} className="border border-border rounded-md p-4 bg-card space-y-3">
-                  {/* Color header */}
                   <div className="flex gap-2 items-center">
-                    <Input
-                      placeholder="Nombre del color (ej: Rojo)"
-                      value={color.nombre}
-                      onChange={(e) => updateColorField(cIdx, "nombre", e.target.value)}
-                      className="h-8 text-xs flex-1"
-                    />
-                    <Input
-                      type="color"
-                      value={color.hex}
-                      onChange={(e) => updateColorField(cIdx, "hex", e.target.value)}
-                      className="w-12 h-8 p-1 cursor-pointer border-none bg-transparent"
-                    />
-                    <Button variant="ghost" size="icon" onClick={() => removeColor(cIdx)} className="h-8 w-8 text-destructive flex-shrink-0">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                    <Input placeholder="Nombre del color" value={color.nombre} onChange={(e) => updateColorField(cIdx, "nombre", e.target.value)} className="h-8 text-xs flex-1" />
+                    <Input type="color" value={color.hex} onChange={(e) => updateColorField(cIdx, "hex", e.target.value)} className="w-12 h-8 p-1 cursor-pointer border-none bg-transparent" />
+                    <Button variant="ghost" size="icon" onClick={() => removeColor(cIdx)} className="h-8 w-8 text-destructive flex-shrink-0"><Trash2 className="h-4 w-4" /></Button>
                   </div>
-
-                  {/* Size toggles for this color */}
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Talles para {color.nombre || "este color"}</p>
                     <div className="flex flex-wrap gap-1.5">
                       {SIZES.map((s) => (
-                        <button
-                          key={s}
-                          type="button"
-                          onClick={() => toggleSizeForColor(cIdx, s)}
-                          className={`px-2.5 py-1 rounded-md border text-[10px] font-bold transition-all ${
-                            s in color.sizes
-                              ? "bg-foreground text-background border-foreground"
-                              : "border-border hover:bg-secondary text-muted-foreground"
-                          }`}
-                        >
+                        <button key={s} type="button" onClick={() => toggleSizeForColor(cIdx, s)}
+                          className={`px-2.5 py-1 rounded-md border text-[10px] font-bold transition-all ${s in color.sizes ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary text-muted-foreground"}`}>
                           {s}
                         </button>
                       ))}
                     </div>
                   </div>
-
-                  {/* Stock per size for this color */}
                   {Object.keys(color.sizes).length > 0 && (
                     <div className="grid grid-cols-3 gap-2 bg-secondary/30 p-2 rounded-md">
                       {Object.entries(color.sizes).map(([size, stock]) => (
                         <div key={size} className="flex flex-col gap-0.5">
                           <span className="text-[9px] font-bold uppercase text-muted-foreground">{size}</span>
-                          <Input
-                            type="number"
-                            min={0}
-                            value={stock}
-                            onChange={(e) => updateStockForColor(cIdx, size, Number(e.target.value))}
-                            className="h-7 text-xs"
-                          />
+                          <Input type="number" min={0} value={stock} onChange={(e) => updateStockForColor(cIdx, size, Number(e.target.value))} className="h-7 text-xs" />
                         </div>
                       ))}
                     </div>
@@ -491,13 +508,7 @@ export default function AdminProducts() {
               ))}
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              onClick={handleGenerateSeo}
-              disabled={generatingSeo || !form.name.trim()}
-              className="w-full gap-2 mb-3"
-            >
+            <Button type="button" variant="outline" onClick={handleGenerateSeo} disabled={generatingSeo || !form.name.trim()} className="w-full gap-2 mb-3">
               {generatingSeo ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
               Generar SEO automático
             </Button>
@@ -510,22 +521,59 @@ export default function AdminProducts() {
         </DialogContent>
       </Dialog>
 
-      {/* Categories Dialog */}
+      {/* Categories & Subcategories Dialog */}
       <Dialog open={catDialogOpen} onOpenChange={setCatDialogOpen}>
-        <DialogContent className="max-w-sm w-[95vw]">
-          <DialogHeader><DialogTitle className="font-display text-xl">Categorías</DialogTitle></DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div className="flex gap-2">
-              <Input placeholder="Nueva categoría" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} />
-              <Button onClick={handleAddCategory} className="bg-foreground text-background"><Plus className="h-4 w-4" /></Button>
+        <DialogContent className="max-w-md w-[95vw] max-h-[80vh] overflow-y-auto">
+          <DialogHeader><DialogTitle className="font-display text-xl">Categorías y Subcategorías</DialogTitle></DialogHeader>
+          <div className="space-y-4 pt-2">
+            {/* Add category */}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Nueva categoría</label>
+              <div className="flex gap-2">
+                <Input placeholder="Ej: Jeans" value={newCatName} onChange={(e) => setNewCatName(e.target.value)} />
+                <Button onClick={handleAddCategory} className="bg-foreground text-background"><Plus className="h-4 w-4" /></Button>
+              </div>
             </div>
-            <div className="space-y-1">
-              {categories.map((c) => (
-                <div key={c.id} className="flex items-center justify-between p-2 bg-secondary/30 rounded-md">
-                  <span className="text-sm">{c.name}</span>
-                  <Button variant="ghost" size="icon" onClick={() => handleDeleteCategory(c.id)} className="h-7 w-7 text-destructive"><Trash2 className="h-3 w-3" /></Button>
-                </div>
-              ))}
+
+            {/* Add subcategory */}
+            <div>
+              <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground mb-2 block">Nueva subcategoría</label>
+              <div className="flex gap-2">
+                <Select value={subcatParentId} onValueChange={setSubcatParentId}>
+                  <SelectTrigger className="w-36"><SelectValue placeholder="Categoría" /></SelectTrigger>
+                  <SelectContent>
+                    {categories.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+                  </SelectContent>
+                </Select>
+                <Input placeholder="Ej: Wide Leg" value={newSubcatName} onChange={(e) => setNewSubcatName(e.target.value)} className="flex-1" />
+                <Button onClick={handleAddSubcategory} disabled={!subcatParentId} className="bg-foreground text-background"><Plus className="h-4 w-4" /></Button>
+              </div>
+            </div>
+
+            {/* List */}
+            <div className="space-y-3">
+              {categories.map((cat) => {
+                const subs = subcategories.filter(s => s.category_id === cat.id);
+                return (
+                  <div key={cat.id} className="border border-border rounded-md p-3">
+                    <div className="flex items-center justify-between">
+                      <span className="font-medium text-sm">{cat.name}</span>
+                      <Button variant="ghost" size="icon" onClick={() => handleDeleteCategory(cat.id)} className="h-7 w-7 text-destructive"><Trash2 className="h-3 w-3" /></Button>
+                    </div>
+                    {subs.length > 0 && (
+                      <div className="mt-2 ml-4 space-y-1">
+                        {subs.map((sub) => (
+                          <div key={sub.id} className="flex items-center justify-between bg-secondary/30 px-2 py-1 rounded-sm">
+                            <span className="text-xs flex items-center gap-1"><ChevronRight className="h-3 w-3 text-muted-foreground" />{sub.name}</span>
+                            <Button variant="ghost" size="icon" onClick={() => handleDeleteSubcategory(sub.id)} className="h-6 w-6 text-destructive"><X className="h-3 w-3" /></Button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {subs.length === 0 && <p className="text-[10px] text-muted-foreground mt-1 ml-4">Sin subcategorías</p>}
+                  </div>
+                );
+              })}
             </div>
           </div>
         </DialogContent>

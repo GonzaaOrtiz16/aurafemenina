@@ -12,6 +12,8 @@ export interface Product {
   originalPrice?: number;
   category: string;
   categorySlug: string;
+  subcategory?: string;
+  subcategorySlug?: string;
   sizes: string[]; // all available sizes (derived)
   images: string[];
   colores?: ProductColorVariant[];
@@ -23,7 +25,7 @@ export interface Product {
 export interface CartItem {
   product: Product;
   size: string;
-  color?: string; // Para que el carrito guarde el color elegido
+  color?: string;
   quantity: number;
 }
 
