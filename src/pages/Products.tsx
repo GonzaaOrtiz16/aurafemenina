@@ -2,7 +2,7 @@ import { useSearchParams } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import ProductCard from "@/components/store/ProductCard";
 import FilterPanel from "@/components/store/filters/FilterPanel";
-import { useProducts, useCategories } from "@/hooks/useProducts";
+import { useProducts, useCategories, useSubcategories } from "@/hooks/useProducts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sparkles, Camera } from "lucide-react";
 import { useMemo, useState, useEffect, useCallback } from "react";
@@ -14,6 +14,7 @@ export default function Products() {
   const [searchParams, setSearchParams] = useSearchParams();
 
   const activeCategory = searchParams.get("categoria") || "";
+  const activeSubcategory = searchParams.get("subcategoria") || "";
   const searchTerm = searchParams.get("search")?.toLowerCase() || "";
 
   const [activeSize, setActiveSize] = useState("");
@@ -25,28 +26,21 @@ export default function Products() {
 
   const { data: products = [], isLoading } = useProducts(activeCategory || undefined);
   const { data: categories = [] } = useCategories();
+  const { data: subcategories = [] } = useSubcategories();
 
   // Smart search with AI
   const doAiSearch = useCallback(async (query: string) => {
-    if (!query || query.length < 4) {
-      setAiResultIds(null);
-      return;
-    }
+    if (!query || query.length < 4) { setAiResultIds(null); return; }
     setAiSearching(true);
     try {
       const resp = await fetch(GEMINI_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-        },
+        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
         body: JSON.stringify({ action: "smart-search", payload: { query } }),
       });
       const data = await resp.json();
       setAiResultIds(data.ids || []);
-    } catch {
-      setAiResultIds(null);
-    }
+    } catch { setAiResultIds(null); }
     setAiSearching(false);
   }, []);
 
@@ -66,10 +60,7 @@ export default function Products() {
     setVisualSearching(true);
     fetch(GEMINI_URL, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}`,
-      },
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
       body: JSON.stringify({ action: "visual-search", payload: { imageBase64 } }),
     })
       .then((r) => r.json())
@@ -98,16 +89,11 @@ export default function Products() {
   const filteredProducts = useMemo(() => {
     let result = products.filter((product) => {
       const matchesSearch = searchTerm ? product.name.toLowerCase().includes(searchTerm) : true;
-      const matchesSize = activeSize
-        ? product.sizes?.some((s: string) => s.toUpperCase() === activeSize.toUpperCase())
-        : true;
+      const matchesSize = activeSize ? product.sizes?.some((s: string) => s.toUpperCase() === activeSize.toUpperCase()) : true;
       const matchesPrice = product.price <= maxPrice;
-      const matchesColor = activeColor
-        ? ((product.colores || []) as Array<{ nombre?: string }>).some(
-            (c) => c.nombre?.toLowerCase() === activeColor.toLowerCase()
-          )
-        : true;
-      return matchesSearch && matchesSize && matchesPrice && matchesColor;
+      const matchesColor = activeColor ? ((product.colores || []) as Array<{ nombre?: string }>).some((c) => c.nombre?.toLowerCase() === activeColor.toLowerCase()) : true;
+      const matchesSubcategory = activeSubcategory ? product.subcategorySlug === activeSubcategory : true;
+      return matchesSearch && matchesSize && matchesPrice && matchesColor && matchesSubcategory;
     });
 
     if (aiResultIds && aiResultIds.length > 0 && searchTerm) {
@@ -118,16 +104,21 @@ export default function Products() {
     }
 
     return result;
-  }, [products, searchTerm, activeSize, maxPrice, activeColor, aiResultIds]);
+  }, [products, searchTerm, activeSize, maxPrice, activeColor, aiResultIds, activeSubcategory]);
 
   const handleCategory = useCallback((slug: string) => {
-    if (!slug || slug === activeCategory) {
-      setSearchParams({});
-    } else {
-      const newParams: Record<string, string> = { categoria: slug };
-      if (searchTerm) newParams.search = searchTerm;
-      setSearchParams(newParams);
-    }
+    const newParams: Record<string, string> = {};
+    if (slug && slug !== activeCategory) newParams.categoria = slug;
+    if (searchTerm) newParams.search = searchTerm;
+    setSearchParams(newParams);
+  }, [activeCategory, searchTerm, setSearchParams]);
+
+  const handleSubcategory = useCallback((slug: string) => {
+    const newParams: Record<string, string> = {};
+    if (activeCategory) newParams.categoria = activeCategory;
+    if (slug) newParams.subcategoria = slug;
+    if (searchTerm) newParams.search = searchTerm;
+    setSearchParams(newParams);
   }, [activeCategory, searchTerm, setSearchParams]);
 
   const clearFilters = useCallback(() => {
@@ -137,15 +128,19 @@ export default function Products() {
     setSearchParams({});
   }, [priceRange.max, setSearchParams]);
 
-  const hasActiveFilters = !!(activeSize || activeColor || maxPrice < priceRange.max || activeCategory || searchTerm);
+  const hasActiveFilters = !!(activeSize || activeColor || maxPrice < priceRange.max || activeCategory || activeSubcategory || searchTerm);
+
+  // Enrich categories with id for subcategory filtering
+  const categoriesWithId = categories.map(c => ({ id: c.id, slug: c.slug, name: c.name }));
 
   return (
     <Layout>
       <div className="container py-10 md:py-16 px-6 md:px-12">
-        {/* Title */}
         <h1 className="font-display text-2xl md:text-4xl font-semibold text-center mb-2 tracking-wide uppercase">
           {searchTerm
             ? `Resultados para: "${searchTerm}"`
+            : activeSubcategory
+            ? subcategories.find(s => s.slug === activeSubcategory)?.name
             : activeCategory
             ? categories.find((c) => c.slug === activeCategory)?.name
             : "Todos los productos"}
@@ -171,8 +166,13 @@ export default function Products() {
         <div className="w-16 h-[1px] bg-accent/30 mx-auto mb-12" />
 
         {/* Active filter badges (mobile) */}
-        {(activeSize || activeColor || maxPrice < priceRange.max) && (
+        {(activeSize || activeColor || maxPrice < priceRange.max || activeSubcategory) && (
           <div className="flex flex-wrap justify-center gap-2 mb-6 md:hidden">
+            {activeSubcategory && (
+              <span className="text-[10px] bg-secondary px-3 py-1 rounded-full border border-border uppercase font-bold">
+                {subcategories.find(s => s.slug === activeSubcategory)?.name}
+              </span>
+            )}
             {activeSize && (
               <span className="text-[10px] bg-secondary px-3 py-1 rounded-full border border-border uppercase font-bold">
                 Talle: {activeSize}
@@ -191,13 +191,13 @@ export default function Products() {
           </div>
         )}
 
-        {/* Two-column layout */}
         <div className="flex gap-10">
-          {/* Desktop Sidebar */}
           <aside className="hidden md:block w-56 shrink-0 sticky top-32 self-start">
             <FilterPanel
-              categories={categories}
+              categories={categoriesWithId}
+              subcategories={subcategories}
               activeCategory={activeCategory}
+              activeSubcategory={activeSubcategory}
               activeSize={activeSize}
               activeColor={activeColor}
               maxPrice={maxPrice}
@@ -205,6 +205,7 @@ export default function Products() {
               availableColors={availableColors}
               hasActiveFilters={hasActiveFilters}
               onCategoryChange={handleCategory}
+              onSubcategoryChange={handleSubcategory}
               onSizeChange={setActiveSize}
               onColorChange={setActiveColor}
               onMaxPriceChange={setMaxPrice}
@@ -212,16 +213,13 @@ export default function Products() {
             />
           </aside>
 
-          {/* Product Grid */}
           <div className="flex-1">
             {/* Mobile: horizontal category pills */}
             <div className="flex flex-wrap gap-2 mb-6 md:hidden">
               <button
                 onClick={() => setSearchParams({})}
                 className={`px-4 py-2 rounded-sm font-body text-[10px] uppercase tracking-wider border transition-colors ${
-                  !activeCategory
-                    ? "bg-foreground text-background border-foreground"
-                    : "border-border hover:bg-secondary"
+                  !activeCategory ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary"
                 }`}
               >
                 Todos
@@ -231,15 +229,34 @@ export default function Products() {
                   key={cat.slug}
                   onClick={() => handleCategory(cat.slug)}
                   className={`px-4 py-2 rounded-sm font-body text-[10px] uppercase tracking-wider border transition-colors ${
-                    activeCategory === cat.slug
-                      ? "bg-foreground text-background border-foreground"
-                      : "border-border hover:bg-secondary"
+                    activeCategory === cat.slug ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary"
                   }`}
                 >
                   {cat.name}
                 </button>
               ))}
             </div>
+
+            {/* Mobile: subcategory pills when category selected */}
+            {activeCategory && (() => {
+              const activeCat = categories.find(c => c.slug === activeCategory);
+              const subs = activeCat ? subcategories.filter(s => s.category_id === activeCat.id) : [];
+              if (subs.length === 0) return null;
+              return (
+                <div className="flex flex-wrap gap-2 mb-6 md:hidden">
+                  <button onClick={() => handleSubcategory("")}
+                    className={`px-3 py-1.5 rounded-sm font-body text-[9px] uppercase tracking-wider border transition-colors ${!activeSubcategory ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary"}`}>
+                    Todas
+                  </button>
+                  {subs.map((sub) => (
+                    <button key={sub.slug} onClick={() => handleSubcategory(sub.slug)}
+                      className={`px-3 py-1.5 rounded-sm font-body text-[9px] uppercase tracking-wider border transition-colors ${activeSubcategory === sub.slug ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary"}`}>
+                      {sub.name}
+                    </button>
+                  ))}
+                </div>
+              );
+            })()}
 
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
               {isLoading

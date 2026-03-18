@@ -38,36 +38,51 @@ export type Database = {
       custom_products: {
         Row: {
           category_id: string | null
+          colores: Json | null
           created_at: string
           description: string | null
           estimated_days: string | null
+          featured: boolean
           id: string
           images: string[]
           name: string
+          original_price: number | null
           price_estimate: number
+          sizes: Json | null
           slug: string
+          subcategory_id: string | null
         }
         Insert: {
           category_id?: string | null
+          colores?: Json | null
           created_at?: string
           description?: string | null
           estimated_days?: string | null
+          featured?: boolean
           id?: string
           images?: string[]
           name: string
+          original_price?: number | null
           price_estimate?: number
+          sizes?: Json | null
           slug: string
+          subcategory_id?: string | null
         }
         Update: {
           category_id?: string | null
+          colores?: Json | null
           created_at?: string
           description?: string | null
           estimated_days?: string | null
+          featured?: boolean
           id?: string
           images?: string[]
           name?: string
+          original_price?: number | null
           price_estimate?: number
+          sizes?: Json | null
           slug?: string
+          subcategory_id?: string | null
         }
         Relationships: [
           {
@@ -75,6 +90,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "encargue_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "custom_products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "encargue_subcategories"
             referencedColumns: ["id"]
           },
         ]
@@ -100,6 +122,38 @@ export type Database = {
         }
         Relationships: []
       }
+      encargue_subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "encargue_subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "encargue_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null
@@ -114,6 +168,7 @@ export type Database = {
           price: number
           sizes: Json
           slug: string
+          subcategory_id: string | null
           updated_at: string
         }
         Insert: {
@@ -129,6 +184,7 @@ export type Database = {
           price?: number
           sizes?: Json
           slug: string
+          subcategory_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -144,6 +200,7 @@ export type Database = {
           price?: number
           sizes?: Json
           slug?: string
+          subcategory_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -152,6 +209,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "products_subcategory_id_fkey"
+            columns: ["subcategory_id"]
+            isOneToOne: false
+            referencedRelation: "subcategories"
             referencedColumns: ["id"]
           },
         ]
@@ -200,6 +264,38 @@ export type Database = {
           value?: Json
         }
         Relationships: []
+      }
+      subcategories: {
+        Row: {
+          category_id: string
+          created_at: string
+          id: string
+          name: string
+          slug: string
+        }
+        Insert: {
+          category_id: string
+          created_at?: string
+          id?: string
+          name: string
+          slug: string
+        }
+        Update: {
+          category_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          slug?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "subcategories_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
