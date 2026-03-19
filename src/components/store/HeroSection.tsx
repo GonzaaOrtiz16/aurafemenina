@@ -5,6 +5,7 @@ import { useSiteSetting } from "@/hooks/useSiteSettings";
 
 interface HeroData {
   image: string;
+  image_position?: string;
   tagline: string;
   title_line1: string;
   title_line2: string;
