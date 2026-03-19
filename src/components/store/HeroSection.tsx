@@ -36,6 +36,7 @@ export default function HeroSection() {
           src={h.image}
           alt="Modelo Aura Femenina"
           className={`w-full h-full object-cover transition-transform duration-[2000ms] ease-out will-change-transform ${loaded ? "scale-100" : "scale-105"}`}
+          style={{ objectPosition: h.image_position || "center center" }}
           fetchPriority="high"
           decoding="sync"
         />
