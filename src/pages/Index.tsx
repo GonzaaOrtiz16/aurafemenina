@@ -91,10 +91,8 @@ export default function Index() {
               <div className="absolute inset-0 bg-accent translate-y-[101%] group-hover:translate-y-0 transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]" />
             </Link>
           </div>
-          <div className="flex-1 aspect-[4/5] max-w-xs bg-muted/30 border border-border/30 flex items-center justify-center">
-            <p className="text-muted-foreground/30 text-[9px] uppercase tracking-[0.3em]">
-              Próximamente
-            </p>
+          <div className="flex-1">
+            <EncargueCarousel />
           </div>
         </div>
       </section>
