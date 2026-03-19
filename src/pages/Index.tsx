@@ -2,6 +2,7 @@ import Layout from "@/components/store/Layout";
 import HeroSection from "@/components/store/HeroSection";
 import ProductCard from "@/components/store/ProductCard";
 import StoreInfo from "@/components/store/StoreInfo";
+import EncargueCarousel from "@/components/store/EncargueCarousel";
 import { useFeaturedProducts } from "@/hooks/useProducts";
 import { Link } from "react-router-dom";
 import { Skeleton } from "@/components/ui/skeleton";
