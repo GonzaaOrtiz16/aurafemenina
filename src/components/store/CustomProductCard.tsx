@@ -1,8 +1,8 @@
 import { Link } from "react-router-dom";
 import { MessageCircle, Clock } from "lucide-react";
 import { trackAnalyticsEvent } from "@/lib/analytics";
+import { useState } from "react";
 
-// Definimos lo que necesita recibir la tarjeta
 interface CustomProductCardProps {
   product: {
     id: string;
@@ -21,7 +21,8 @@ interface CustomProductCardProps {
 }
 
 export default function CustomProductCard({ product, whatsappNumber }: CustomProductCardProps) {
-  
+  const [imgLoaded, setImgLoaded] = useState(false);
+
   const buildWhatsAppUrl = () => {
     const coloresText = (product.colores || [])
       .map((c: any) => c.nombre)
@@ -48,26 +49,42 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
   };
 
   return (
-    <div className="group animate-fade-in flex flex-col h-full">
-      {/* Link al Detalle: Envuelve imagen y nombre */}
+    <div className={`group animate-fade-in flex flex-col h-full transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}>
+      {/* Link al Detalle: Imagen con efecto Espejo de ProductCard */}
       <Link 
         to={`/encargue/${product.slug}`} 
         className="block cursor-pointer flex-1"
+        data-track-key={`encargue:${product.name}`}
       >
         <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-secondary mb-3">
-          {product.images[0] ? (
-            <img 
-              src={product.images[0]} 
-              alt={product.name} 
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-              loading="lazy" 
-            />
+          {product.images && product.images[0] ? (
+            <>
+              {/* Imagen Principal: Zoom suave al hacer hover */}
+              <img 
+                src={product.images[0]} 
+                alt={product.name} 
+                className="w-full h-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.03]" 
+                loading="lazy"
+                onLoad={() => setImgLoaded(true)}
+              />
+              
+              {/* Segunda Imagen: Aparece en hover (igual que en Destacados) */}
+              {product.images[1] && (
+                <img 
+                  src={product.images[1]} 
+                  alt={product.name} 
+                  className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out" 
+                  loading="lazy"
+                />
+              )}
+            </>
           ) : (
             <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">
               Sin imagen
             </div>
           )}
-          <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[9px] font-bold uppercase tracking-wider px-3 py-1 rounded-sm">
+
+          <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[9px] font-bold uppercase tracking-wider px-3 py-1 rounded-sm z-10">
             Por encargue
           </span>
         </div>
@@ -84,11 +101,6 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
             ${product.price_estimate.toLocaleString("es-AR")}
             <span className="text-[10px] text-muted-foreground font-normal ml-1">est.</span>
           </span>
-          {product.original_price && (
-            <span className="text-xs text-muted-foreground line-through">
-              ${Number(product.original_price).toLocaleString("es-AR")}
-            </span>
-          )}
         </div>
 
         {product.estimated_days && (
@@ -96,22 +108,9 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
             <Clock className="w-3 h-3" /> {product.estimated_days} días demora
           </span>
         )}
-
-        {(product.colores || []).length > 0 && (
-          <div className="flex gap-1 mt-1">
-            {product.colores.map((c: any, i: number) => (
-              <div 
-                key={i} 
-                className="w-3 h-3 rounded-full border border-border/50" 
-                style={{ backgroundColor: c.hex }} 
-                title={c.nombre} 
-              />
-            ))}
-          </div>
-        )}
       </div>
 
-      {/* Botón de Consulta Rápida */}
+      {/* Botón de Consulta */}
       <a
         href={buildWhatsAppUrl()}
         target="_blank"
