@@ -27,11 +27,11 @@ serve(async (req) => {
         .select("name, slug, price, original_price, description, colores, sizes, images, categories(name)")
         .limit(100);
 
-      // 2. Fetch de productos POR ENCARGUE (Catálogo Premium/Sin Stock físico)
-      // Asumimos que están en la tabla 'custom_products'
+      // 2. Fetch de productos POR ENCARGUE (Catálogo Premium)
+      // Ajustado a tus columnas reales: price_estimate y estimated_days
       const { data: encargueProducts } = await supabase
         .from("custom_products")
-        .select("name, price, description")
+        .select("name, price_estimate, description, estimated_days")
         .limit(100);
 
       // Fetch contact for WhatsApp
@@ -57,9 +57,13 @@ serve(async (req) => {
         })
         .join("\n");
 
-      // Armamos la lista de Productos por Encargue
+      // Armamos la lista de Productos por Encargue con tus columnas reales
       const encargueCatalog = (encargueProducts || [])
-        .map((p: any) => `- ${p.name} | Precio aprox: $${p.price || 'Consultar'} | (Modalidad: POR ENCARGUE)`)
+        .map((p: any) => {
+          const price = p.price_estimate ? `$${p.price_estimate}` : 'Consultar';
+          const days = p.estimated_days || '5-15';
+          return `- ${p.name} | Precio est: ${price} | Entrega: ${days} días | (MODALIDAD: POR ENCARGUE)`;
+        })
         .join("\n");
 
       const systemPrompt = `Sos "Aura Stylist", la asesora de moda virtual de Aura Femenina, una tienda de ropa femenina argentina.
@@ -76,7 +80,7 @@ ${encargueCatalog}
 
 REGLAS DE ORO:
 - Podés recomendar productos de ambos catálogos libremente según lo que busque la clienta. Mencioná precios y talles disponibles.
-- SI LA CLIENTA ELIGE UN PRODUCTO DEL CATÁLOGO "POR ENCARGUE": Tenés que aclararle que esas prendas no están en stock físico inmediato, que se traen por encargo y tienen una demora estimada de entrega de 5 a 15 días.
+- SI LA CLIENTA ELIGE UN PRODUCTO DEL CATÁLOGO "POR ENCARGUE": Tenés que aclararle que esas prendas no están en stock físico inmediato, que se traen por encargo y tienen una demora estimada de entrega (generalmente entre 5 y 15 días).
 - Para concretar cualquier compra "Por Encargue" o resolver dudas específicas de esos pedidos, derivá SIEMPRE a la clienta al WhatsApp: ${whatsapp}.
 - Si preguntan por envíos, decí que hacen envíos a todo el país y que pueden ver los costos en el carrito.
 - Sé concisa pero encantadora. Usá emojis con moderación (✨, 💕, 👗).
@@ -157,7 +161,6 @@ Usá español argentino. Máximo 2-3 oraciones. Enfocate en cómo la prenda hace
     if (action === "smart-search") {
       const { query } = payload;
 
-      // Fetch all products
       const { data: products } = await supabase
         .from("products")
         .select("id, name, slug, price, description, colores, categories(name)")
@@ -184,12 +187,10 @@ Usá español argentino. Máximo 2-3 oraciones. Enfocate en cómo la prenda hace
               role: "system",
               content: `Sos un motor de búsqueda inteligente para una tienda de ropa femenina. 
 Dada una consulta del usuario, analizá la intención y devolvé los IDs de los productos más relevantes del catálogo.
-Entendé consultas como "algo para salir de noche", "ropa cómoda", "outfit de verano", etc.
 CATÁLOGO:
 ${productList}
 
-Respondé SOLO con un JSON array de IDs ordenados por relevancia: ["id1", "id2", ...]
-Si no hay productos relevantes, devolvé un array vacío: []`,
+Respondé SOLO con un JSON array de IDs ordenados por relevancia: ["id1", "id2", ...]`,
             },
             { role: "user", content: query },
           ],
@@ -199,8 +200,6 @@ Si no hay productos relevantes, devolvé un array vacío: []`,
       if (!response.ok) throw new Error("AI search error");
       const data = await response.json();
       const content = data.choices?.[0]?.message?.content || "[]";
-
-      // Extract JSON array from response
       const match = content.match(/\[[\s\S]*?\]/);
       const ids = match ? JSON.parse(match[0]) : [];
 
@@ -225,9 +224,7 @@ Si no hay productos relevantes, devolvé un array vacío: []`,
             {
               role: "system",
               content: `Sos un experto en SEO para e-commerce de moda femenina argentina. Generá meta tags optimizados.
-Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}
-- metaTitle: máx 60 caracteres, incluir marca "Aura Femenina" y keyword principal
-- metaDescription: máx 155 caracteres, call-to-action, incluir beneficios clave`,
+Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}`,
             },
             {
               role: "user",
@@ -263,8 +260,7 @@ Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}
           messages: [
             {
               role: "system",
-              content: `Sos una estilista de moda experta. Dado un producto principal, elegí exactamente 2 productos complementarios del catálogo para armar un outfit completo y coherente.
-Pensá en combinaciones que una mujer usaría juntas (ej: si es un jean, sugerí un top y zapatos; si es un vestido, sugerí accesorios o abrigos).
+              content: `Sos una estilista de moda experta. Dado un producto principal, elegí exactamente 2 productos complementarios del catálogo para armar un outfit completo.
 Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
             },
             {
@@ -289,18 +285,13 @@ Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
     // ── ACTION: visual-search ──
     if (action === "visual-search") {
       const { imageBase64 } = payload;
-
       const { data: products } = await supabase
         .from("products")
         .select("id, name, slug, price, description, colores, categories(name)")
         .limit(200);
 
       const productList = (products || [])
-        .map((p: any) => {
-          const cat = p.categories?.name || "";
-          const colores = (p.colores || []).map((c: any) => c.nombre).filter(Boolean).join(", ");
-          return `ID:${p.id} | ${p.name} | Cat:${cat} | Colores:${colores}`;
-        })
+        .map((p: any) => `ID:${p.id} | ${p.name} | Cat:${p.categories?.name || ""}`)
         .join("\n");
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
@@ -314,18 +305,15 @@ Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
           messages: [
             {
               role: "system",
-              content: `Sos un motor de búsqueda visual para una tienda de ropa femenina. El usuario te envía una imagen de una prenda.
-Analizá el tipo de prenda, color, estilo y encontrá los productos más similares del catálogo.
+              content: `Analizá la imagen y encontrá los productos más similares del catálogo.
 CATÁLOGO:
 ${productList}
-
-Respondé SOLO con un JSON array de IDs de los productos más similares: ["id1", "id2", ...]
-Si no hay productos similares, devolvé [].`,
+Respondé SOLO con un JSON array de IDs: ["id1", "id2", ...]`,
             },
             {
               role: "user",
               content: [
-                { type: "text", text: "Encontrá prendas similares a esta imagen en el catálogo." },
+                { type: "text", text: "Encontrá prendas similares a esta imagen." },
                 { type: "image_url", image_url: { url: `data:image/jpeg;base64,${imageBase64}` } },
               ],
             },
