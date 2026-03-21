@@ -69,7 +69,13 @@ export default function EncargueDetail() {
   };
 
   const colors = getColors();
-  const availableSizes = product.sizes || [];
+  const availableSizes = Array.isArray(product.sizes)
+    ? product.sizes
+    : product.sizes && typeof product.sizes === "object"
+      ? Object.keys(product.sizes)
+      : colors.length > 0
+        ? Array.from(new Set(colors.flatMap((color) => Object.keys(color.sizes || {}))))
+        : [];
 
   const handleWhatsAppInquiry = () => {
     const colorName = selectedColorIdx >= 0 ? colors[selectedColorIdx].nombre : "";
