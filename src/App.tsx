@@ -22,6 +22,8 @@ const Register = lazy(() => import("./pages/Register"));
 const ForgotPassword = lazy(() => import("./pages/ForgotPassword"));
 const ResetPassword = lazy(() => import("./pages/ResetPassword"));
 const Encargues = lazy(() => import("./pages/Encargues"));
+// Nueva página de detalle para productos por encargue
+const EncargueDetail = lazy(() => import("./pages/EncargueDetail")); 
 const AdminLogin = lazy(() => import("./pages/AdminLogin"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -65,6 +67,8 @@ const App = () => (
               <Route path="/recuperar-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/encargues" element={<Encargues />} />
+              {/* Ruta para el detalle del producto por encargue */}
+              <Route path="/encargue/:slug" element={<EncargueDetail />} />
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
               <Route path="*" element={<NotFound />} />
