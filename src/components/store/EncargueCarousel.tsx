@@ -3,25 +3,21 @@ import { supabase } from "@/integrations/supabase/client";
 import { Carousel, CarouselContent, CarouselItem } from "@/components/ui/carousel";
 import { Skeleton } from "@/components/ui/skeleton";
 import { memo } from "react";
-
-interface CustomProduct {
-  id: string;
-  name: string;
-  slug: string;
-  images: string[];
-}
+import CustomProductCard from "./CustomProductCard"; // Importamos tu nueva tarjeta
 
 function useEncarguePreview() {
   return useQuery({
     queryKey: ["custom_products", "preview"],
     queryFn: async () => {
+      // Actualizamos el select para traer todos los campos que pide la tarjeta
       const { data, error } = await supabase
         .from("custom_products")
-        .select("id, name, slug, images")
+        .select("*") 
         .order("created_at", { ascending: false })
         .limit(8);
+      
       if (error) throw error;
-      return data as unknown as CustomProduct[];
+      return data;
     },
     staleTime: 5 * 60 * 1000,
   });
@@ -29,6 +25,8 @@ function useEncarguePreview() {
 
 function EncargueCarousel() {
   const { data: products = [], isLoading } = useEncarguePreview();
+  // Usamos el número de contacto de Aura Femenina guardado
+  const whatsappNumber = "5491134944228"; 
 
   if (isLoading) {
     return (
@@ -48,22 +46,13 @@ function EncargueCarousel() {
       className="w-full max-w-sm md:max-w-md"
     >
       <CarouselContent className="-ml-3">
-        {products.map((product) => (
+        {products.map((product: any) => (
           <CarouselItem key={product.id} className="pl-3 basis-1/2 md:basis-2/5">
-            <div className="relative aspect-[3/4] overflow-hidden bg-secondary group">
-              <img
-                src={product.images[0]}
-                alt={product.name}
-                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.03]"
-                loading="lazy"
-                decoding="async"
-              />
-              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/50 to-transparent p-3 pt-8">
-                <p className="text-white text-[10px] font-bold uppercase tracking-[0.15em] leading-tight">
-                  {product.name}
-                </p>
-              </div>
-            </div>
+            {/* Reemplazamos el div anterior por el nuevo componente con efecto zoom */}
+            <CustomProductCard 
+              product={product} 
+              whatsappNumber={whatsappNumber} 
+            />
           </CarouselItem>
         ))}
       </CarouselContent>
