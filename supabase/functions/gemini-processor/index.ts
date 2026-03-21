@@ -21,10 +21,17 @@ serve(async (req) => {
 
     // ── ACTION: chat (Aura Stylist) ──
     if (action === "chat") {
-      // Fetch products for context
+      // 1. Fetch de productos EN STOCK (Entrega inmediata)
       const { data: products } = await supabase
         .from("products")
         .select("name, slug, price, original_price, description, colores, sizes, images, categories(name)")
+        .limit(100);
+
+      // 2. Fetch de productos POR ENCARGUE (Catálogo Premium/Sin Stock físico)
+      // Asumimos que están en la tabla 'custom_products'
+      const { data: encargueProducts } = await supabase
+        .from("custom_products")
+        .select("name, price, description")
         .limit(100);
 
       // Fetch contact for WhatsApp
@@ -36,6 +43,7 @@ serve(async (req) => {
 
       const whatsapp = (contactSetting?.value as any)?.whatsapp || "5491134944228";
 
+      // Armamos la lista de Stock Inmediato
       const productsCatalog = (products || [])
         .map((p: any) => {
           const colores = (p.colores || []).map((c: any) => c.nombre).filter(Boolean).join(", ");
@@ -49,20 +57,30 @@ serve(async (req) => {
         })
         .join("\n");
 
+      // Armamos la lista de Productos por Encargue
+      const encargueCatalog = (encargueProducts || [])
+        .map((p: any) => `- ${p.name} | Precio aprox: $${p.price || 'Consultar'} | (Modalidad: POR ENCARGUE)`)
+        .join("\n");
+
       const systemPrompt = `Sos "Aura Stylist", la asesora de moda virtual de Aura Femenina, una tienda de ropa femenina argentina.
 Tu personalidad es cálida, fashionista, empática y profesional. Usás un tono amigable pero elegante, como una amiga que sabe de moda.
 Hablás en español argentino (usás "vos", "tenés", "mirá", etc.).
 
-CATÁLOGO DE PRODUCTOS DISPONIBLES:
+ATENCIÓN: La tienda maneja DOS catálogos distintos.
+
+1. CATÁLOGO EN STOCK (Entrega inmediata):
 ${productsCatalog}
 
-REGLAS:
-- Recomendá productos del catálogo real. Mencioná precios y talles disponibles.
-- Si preguntan por WhatsApp o quieren hablar con alguien, dales este número: ${whatsapp} (deciles que escriban por WhatsApp).
-- Si no tenés un producto que buscan, sugerí alternativas del catálogo o que consulten por WhatsApp.
-- Sé concisa pero encantadora. Usá emojis con moderación (✨, 💕, 👗).
-- Nunca inventes productos que no están en el catálogo.
+2. CATÁLOGO "POR ENCARGUE" (Prendas exclusivas bajo pedido):
+${encargueCatalog}
+
+REGLAS DE ORO:
+- Podés recomendar productos de ambos catálogos libremente según lo que busque la clienta. Mencioná precios y talles disponibles.
+- SI LA CLIENTA ELIGE UN PRODUCTO DEL CATÁLOGO "POR ENCARGUE": Tenés que aclararle que esas prendas no están en stock físico inmediato, que se traen por encargo y tienen una demora estimada de entrega de 5 a 15 días.
+- Para concretar cualquier compra "Por Encargue" o resolver dudas específicas de esos pedidos, derivá SIEMPRE a la clienta al WhatsApp: ${whatsapp}.
 - Si preguntan por envíos, decí que hacen envíos a todo el país y que pueden ver los costos en el carrito.
+- Sé concisa pero encantadora. Usá emojis con moderación (✨, 💕, 👗).
+- Nunca inventes productos que no estén en las dos listas de arriba.
 - Respondé SIEMPRE en español argentino.`;
 
       const messages = payload.messages || [];
