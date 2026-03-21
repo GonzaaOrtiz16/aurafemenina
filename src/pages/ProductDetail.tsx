@@ -14,6 +14,7 @@ import ZoomableImage from "@/components/store/ZoomableImage";
 import CompletaElLook from "@/components/store/CompletaElLook";
 import { openAuraStylist } from "@/components/store/AuraStylist";
 import { motion } from "framer-motion";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
@@ -58,6 +59,22 @@ export default function ProductDetail() {
       setSelectedColorIdx(colors.length === 1 ? 0 : -1);
       emblaApi?.scrollTo(0, true);
     }
+  }, [product]);
+
+  useEffect(() => {
+    if (!product) return;
+
+    void trackAnalyticsEvent({
+      eventType: "product_view",
+      path: `/producto/${product.slug}`,
+      productId: product.id,
+      elementKey: `product-view:${product.slug}`,
+      metadata: {
+        category: product.category,
+        subcategory: product.subcategory || null,
+        price: product.price,
+      },
+    });
   }, [product]);
 
   if (isLoading) return <Layout><div className="container py-10"><Skeleton className="h-[400px]" /></div></Layout>;

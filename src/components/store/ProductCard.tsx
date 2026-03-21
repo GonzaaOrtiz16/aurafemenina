@@ -15,7 +15,12 @@ function ProductCard({ product }: ProductCardProps) {
     <div
       className={`transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
     >
-      <Link to={`/producto/${product.slug}`} className="group block">
+      <Link
+        to={`/producto/${product.slug}`}
+        className="group block"
+        data-track-key={`producto:${product.name}`}
+        data-product-id={product.id}
+      >
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary">
           <img
             src={product.images[0]}

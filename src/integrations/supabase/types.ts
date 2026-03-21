@@ -14,6 +14,96 @@ export type Database = {
   }
   public: {
     Tables: {
+      admin_ai_actions: {
+        Row: {
+          action_type: string
+          admin_user_id: string
+          created_at: string
+          id: string
+          prompt: string
+          result: Json
+          status: string
+          target_id: string | null
+          target_type: string | null
+        }
+        Insert: {
+          action_type: string
+          admin_user_id: string
+          created_at?: string
+          id?: string
+          prompt: string
+          result?: Json
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Update: {
+          action_type?: string
+          admin_user_id?: string
+          created_at?: string
+          id?: string
+          prompt?: string
+          result?: Json
+          status?: string
+          target_id?: string | null
+          target_type?: string | null
+        }
+        Relationships: []
+      }
+      analytics_events: {
+        Row: {
+          created_at: string
+          custom_product_id: string | null
+          element_key: string | null
+          event_type: string
+          id: string
+          metadata: Json
+          order_ref: string | null
+          path: string
+          product_id: string | null
+          session_id: string
+          user_id: string | null
+          viewport_height: number | null
+          viewport_width: number | null
+          x_percent: number | null
+          y_percent: number | null
+        }
+        Insert: {
+          created_at?: string
+          custom_product_id?: string | null
+          element_key?: string | null
+          event_type: string
+          id?: string
+          metadata?: Json
+          order_ref?: string | null
+          path: string
+          product_id?: string | null
+          session_id: string
+          user_id?: string | null
+          viewport_height?: number | null
+          viewport_width?: number | null
+          x_percent?: number | null
+          y_percent?: number | null
+        }
+        Update: {
+          created_at?: string
+          custom_product_id?: string | null
+          element_key?: string | null
+          event_type?: string
+          id?: string
+          metadata?: Json
+          order_ref?: string | null
+          path?: string
+          product_id?: string | null
+          session_id?: string
+          user_id?: string | null
+          viewport_height?: number | null
+          viewport_width?: number | null
+          x_percent?: number | null
+          y_percent?: number | null
+        }
+        Relationships: []
+      }
       categories: {
         Row: {
           created_at: string

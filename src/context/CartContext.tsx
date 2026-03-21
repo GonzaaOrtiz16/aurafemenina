@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
 import { Product, CartItem } from "@/types/product";
 import { useAuth } from "@/hooks/useAuth";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 interface CartContextType {
   items: CartItem[];
@@ -44,6 +45,19 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     if (!isAuthenticated) {
       throw new Error("Tenés que iniciar sesión para agregar productos al carrito");
     }
+
+    void trackAnalyticsEvent({
+      eventType: "add_to_cart",
+      path: typeof window !== "undefined" ? window.location.pathname : "/productos",
+      productId: product.id,
+      elementKey: `add-to-cart:${product.slug}`,
+      metadata: {
+        size,
+        color: color || null,
+        quantity,
+        price: product.price,
+      },
+    });
     
     setItems((prev) => {
       const existing = prev.find(
