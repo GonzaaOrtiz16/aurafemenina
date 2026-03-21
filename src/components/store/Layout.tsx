@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import Header from "./Header";
 import Footer from "./Footer";
 import PageTransition from "./PageTransition";
+import AnalyticsTracker from "./AnalyticsTracker";
 
 // Lazy load heavy floating components - they aren't needed for first paint
 const WhatsAppButton = lazy(() => import("./WhatsAppButton"));
@@ -11,6 +12,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   return (
     <div className="flex min-h-screen flex-col">
       <Header />
+      <AnalyticsTracker />
       <main className="flex-1">
         <PageTransition>{children}</PageTransition>
       </main>

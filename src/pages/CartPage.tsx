@@ -11,6 +11,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Label } from "@/components/ui/label";
 import { Minus, Plus, Trash2, MessageCircle, Truck, Store } from "lucide-react";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 interface ContactData { whatsapp: string; }
 
@@ -54,12 +55,27 @@ export default function CartPage() {
     return encodeURIComponent(msg);
   };
 
-  const handleCheckout = () => {
+  const handleCheckout = async () => {
     if (!isPickup) {
       if (!shipping || !zone) { alert("Por favor, calculá el envío ingresando tu código postal."); return; }
       if (!meetsMinimum) { alert(`Para envíos a ${ZONE_LABELS[zone]} el mínimo de compra es de ${formatPrice(minimum)}. Te faltan ${formatPrice(minimum - subtotal)}.`); return; }
       if (address.trim() === "") { alert("Por favor, ingresá una dirección para el envío."); return; }
     }
+
+    await trackAnalyticsEvent({
+      eventType: "checkout_intent",
+      path: "/carrito",
+      orderRef: `cart-${Date.now()}`,
+      elementKey: "checkout-whatsapp",
+      metadata: {
+        item_count: items.length,
+        subtotal,
+        total,
+        delivery_method: deliveryMethod,
+        zone,
+      },
+    });
+
     window.open(`https://wa.me/${whatsappNumber}?text=${buildWhatsAppMessage()}`, "_blank");
   };
 

@@ -2,12 +2,13 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, ShoppingBag, Image, HelpCircle, Settings } from "lucide-react";
+import { LogOut, Package, ShoppingBag, Image, HelpCircle, Settings, Bot } from "lucide-react";
 import AdminProducts from "@/components/admin/AdminProducts";
 import AdminEncargues from "@/components/admin/AdminEncargues";
 import AdminHero from "@/components/admin/AdminHero";
 import AdminFAQs from "@/components/admin/AdminFAQs";
 import AdminConfig from "@/components/admin/AdminConfig";
+import AdminAI from "@/components/admin/AdminAI";
 
 const TABS = [
   { id: "products", label: "Productos", icon: Package },
@@ -15,6 +16,7 @@ const TABS = [
   { id: "hero", label: "Portada", icon: Image },
   { id: "faqs", label: "FAQs", icon: HelpCircle },
   { id: "config", label: "Configuración", icon: Settings },
+  { id: "ai", label: "IA Admin", icon: Bot },
 ] as const;
 
 type TabId = (typeof TABS)[number]["id"];
@@ -83,6 +85,7 @@ export default function AdminDashboard() {
         {activeTab === "hero" && <AdminHero />}
         {activeTab === "faqs" && <AdminFAQs />}
         {activeTab === "config" && <AdminConfig />}
+        {activeTab === "ai" && <AdminAI onNavigateTab={setActiveTab} />}
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { Clock, MessageCircle, X, ChevronRight } from "lucide-react";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
+import { trackAnalyticsEvent } from "@/lib/analytics";
 
 interface EncargueCategory {
   id: string;
@@ -314,6 +315,21 @@ export default function Encargues() {
                         href={buildWhatsAppUrl(product)}
                         target="_blank"
                         rel="noopener noreferrer"
+                         data-track-key={`encargue:${product.name}`}
+                         data-custom-product-id={product.id}
+                         onClick={() => {
+                           void trackAnalyticsEvent({
+                             eventType: "custom_checkout_intent",
+                             path: "/encargues",
+                             customProductId: product.id,
+                             elementKey: `consultar-encargue:${product.slug}`,
+                             metadata: {
+                               price_estimate: product.price_estimate,
+                               category_id: product.category_id,
+                               subcategory_id: product.subcategory_id,
+                             },
+                           });
+                         }}
                         className="flex items-center justify-center gap-2 w-full mt-3 py-3 bg-foreground text-background font-body text-[10px] font-bold uppercase tracking-[0.2em] hover:bg-foreground/90 transition-colors rounded-sm"
                       >
                         <MessageCircle className="w-4 h-4" /> Consultar
