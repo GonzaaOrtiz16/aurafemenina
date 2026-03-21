@@ -22,6 +22,7 @@ interface CustomProductCardProps {
 
 export default function CustomProductCard({ product, whatsappNumber }: CustomProductCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
 
   const buildWhatsAppUrl = () => {
     const coloresText = (product.colores || [])
@@ -48,9 +49,15 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
     });
   };
 
+  const hasMultipleImages = product.images && product.images.length > 1;
+
   return (
-    <div className={`group animate-fade-in flex flex-col h-full transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}>
-      {/* Link al Detalle: Imagen con efecto Espejo de ProductCard */}
+    <div 
+      className={`group animate-fade-in flex flex-col h-full transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      {/* Link al Detalle con Efectos Visuales */}
       <Link 
         to={`/encargue/${product.slug}`} 
         className="block cursor-pointer flex-1"
@@ -59,7 +66,7 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
         <div className="relative aspect-[3/4] overflow-hidden rounded-sm bg-secondary mb-3">
           {product.images && product.images[0] ? (
             <>
-              {/* Imagen Principal: Zoom suave al hacer hover */}
+              {/* Imagen Principal con Zoom */}
               <img 
                 src={product.images[0]} 
                 alt={product.name} 
@@ -68,12 +75,12 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
                 onLoad={() => setImgLoaded(true)}
               />
               
-              {/* Segunda Imagen: Aparece en hover (igual que en Destacados) */}
+              {/* Segunda Imagen en Hover */}
               {product.images[1] && (
                 <img 
                   src={product.images[1]} 
                   alt={product.name} 
-                  className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out" 
+                  className="absolute inset-0 w-full h-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out z-0" 
                   loading="lazy"
                 />
               )}
@@ -84,9 +91,22 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
             </div>
           )}
 
+          {/* Badge de Encargue */}
           <span className="absolute top-3 left-3 bg-accent text-accent-foreground text-[9px] font-bold uppercase tracking-wider px-3 py-1 rounded-sm z-10">
             Por encargue
           </span>
+
+          {/* Indicadores de Galería (Rayitas estilo Zara/Mango) */}
+          {hasMultipleImages && (
+            <div className={`absolute bottom-3 left-0 right-0 flex justify-center gap-1.5 z-20 transition-opacity duration-500 ${isHovered ? "opacity-100" : "opacity-0"}`}>
+              {product.images.map((_, index) => (
+                <div 
+                  key={index}
+                  className={`h-0.5 rounded-full transition-all duration-300 bg-white shadow-sm ${index === 0 ? "w-5 opacity-100" : "w-1.5 opacity-60"}`}
+                />
+              ))}
+            </div>
+          )}
         </div>
 
         <h3 className="font-body text-sm font-medium leading-tight group-hover:text-accent transition-colors">
@@ -94,7 +114,7 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
         </h3>
       </Link>
 
-      {/* Info de Precio y Colores */}
+      {/* Info de Producto */}
       <div className="mt-2 flex flex-col gap-1">
         <div className="flex items-center gap-2">
           <span className="font-body text-sm font-semibold">
@@ -110,7 +130,7 @@ export default function CustomProductCard({ product, whatsappNumber }: CustomPro
         )}
       </div>
 
-      {/* Botón de Consulta */}
+      {/* Botón WhatsApp */}
       <a
         href={buildWhatsAppUrl()}
         target="_blank"
