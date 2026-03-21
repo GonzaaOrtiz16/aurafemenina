@@ -1,75 +1,12 @@
 import { useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@/integrations/supabase/client";
 import Layout from "@/components/store/Layout";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
 import { X, ChevronRight } from "lucide-react";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
+import { useCustomProducts, useEncargueCategories, useEncargueSubcategories } from "@/hooks/useCustomProducts";
 import CustomProductCard from "@/components/store/CustomProductCard";
-
-interface EncargueCategory {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface EncargueSubcategory {
-  id: string;
-  category_id: string;
-  name: string;
-  slug: string;
-}
-
-interface CustomProduct {
-  id: string;
-  name: string;
-  slug: string;
-  description: string | null;
-  images: string[];
-  price_estimate: number;
-  original_price: number | null;
-  estimated_days: string | null;
-  category_id: string | null;
-  subcategory_id: string | null;
-  colores: any[];
-  sizes: Record<string, number>;
-  featured: boolean;
-}
-
-function useEncargueCategories() {
-  return useQuery({
-    queryKey: ["encargue_categories"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("encargue_categories").select("*").order("name");
-      if (error) throw error;
-      return data as EncargueCategory[];
-    },
-  });
-}
-
-function useEncargueSubcategories() {
-  return useQuery({
-    queryKey: ["encargue_subcategories"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("encargue_subcategories").select("*").order("name");
-      if (error) throw error;
-      return data as EncargueSubcategory[];
-    },
-  });
-}
-
-function useCustomProducts() {
-  return useQuery({
-    queryKey: ["custom_products"],
-    queryFn: async () => {
-      const { data, error } = await supabase.from("custom_products").select("*").order("created_at", { ascending: false });
-      if (error) throw error;
-      return data as unknown as CustomProduct[];
-    },
-  });
-}
 
 interface ContactData { whatsapp: string; }
 
