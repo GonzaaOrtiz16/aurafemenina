@@ -21,18 +21,19 @@ serve(async (req) => {
 
     // ── ACTION: chat (Aura Stylist) ──
     if (action === "chat") {
+      const pageContext = payload?.pageContext || {};
+
       // 1. Fetch de productos EN STOCK (Entrega inmediata)
       const { data: products } = await supabase
         .from("products")
-        .select("name, slug, price, original_price, description, colores, sizes, images, categories(name)")
-        .limit(100);
+        .select("id, name, slug, price, original_price, description, colores, sizes, featured, categories(name,slug), subcategories(name,slug)")
+        .limit(1000);
 
-      // 2. Fetch de productos POR ENCARGUE (Catálogo Premium)
-      // Ajustado a tus columnas reales: price_estimate y estimated_days
+      // 2. Fetch de productos POR ENCARGUE
       const { data: encargueProducts } = await supabase
         .from("custom_products")
-        .select("name, price_estimate, description, estimated_days")
-        .limit(100);
+        .select("id, name, slug, price_estimate, description, estimated_days, colores, sizes, featured, encargue_categories(name,slug), encargue_subcategories(name,slug)")
+        .limit(1000);
 
       // Fetch contact for WhatsApp
       const { data: contactSetting } = await supabase
@@ -43,48 +44,84 @@ serve(async (req) => {
 
       const whatsapp = (contactSetting?.value as any)?.whatsapp || "5491134944228";
 
-      // Armamos la lista de Stock Inmediato
+      const formatSizeMap = (sizes: Record<string, unknown> | null | undefined) => {
+        if (!sizes || typeof sizes !== "object") return "sin dato";
+        const entries = Object.entries(sizes);
+        if (entries.length === 0) return "sin dato";
+        return entries.map(([size, stock]) => `${size}:${stock}`).join(", ");
+      };
+
+      const formatColorStock = (colores: any[] | null | undefined) => {
+        if (!Array.isArray(colores) || colores.length === 0) return "sin dato";
+        return colores
+          .map((color) => `${color?.nombre || "sin nombre"} {${formatSizeMap(color?.sizes || {})}}`)
+          .join(" | ");
+      };
+
       const productsCatalog = (products || [])
         .map((p: any) => {
-          const colores = (p.colores || []).map((c: any) => c.nombre).filter(Boolean).join(", ");
-          const sizes = p.colores?.length
-            ? [...new Set((p.colores as any[]).flatMap((c: any) => Object.keys(c.sizes || {})))].join(", ")
-            : Object.keys(p.sizes || {}).join(", ");
-          const cat = p.categories?.name || "";
-          const price = p.price;
+          const cat = p.categories?.name || "Sin categoría";
+          const subcat = p.subcategories?.name ? ` / ${p.subcategories.name}` : "";
           const origPrice = p.original_price ? ` (antes $${p.original_price})` : "";
-          return `- ${p.name} | $${price}${origPrice} | Cat: ${cat} | Colores: ${colores || "N/A"} | Talles: ${sizes || "N/A"} | Link: /producto/${p.slug}`;
+          return [
+            `- ID: ${p.id}`,
+            `Nombre: ${p.name}`,
+            `Catálogo: stock inmediato`,
+            `Categoría: ${cat}${subcat}`,
+            `Precio exacto: $${p.price}${origPrice}`,
+            `Talles exactos: ${formatSizeMap(p.sizes || {})}`,
+            `Stock exacto por color/talle: ${formatColorStock(p.colores || [])}`,
+            `Descripción: ${p.description || "sin dato"}`,
+            `Destacado: ${p.featured ? "sí" : "no"}`,
+            `Link: /producto/${p.slug}`,
+          ].join(" | ");
         })
         .join("\n");
 
-      // Armamos la lista de Productos por Encargue con tus columnas reales
       const encargueCatalog = (encargueProducts || [])
         .map((p: any) => {
-          const price = p.price_estimate ? `$${p.price_estimate}` : 'Consultar';
-          const days = p.estimated_days || '5-15';
-          return `- ${p.name} | Precio est: ${price} | Entrega: ${days} días | (MODALIDAD: POR ENCARGUE)`;
+          const cat = p.encargue_categories?.name || "Sin categoría";
+          const subcat = p.encargue_subcategories?.name ? ` / ${p.encargue_subcategories.name}` : "";
+          return [
+            `- ID: ${p.id}`,
+            `Nombre: ${p.name}`,
+            `Catálogo: por encargue`,
+            `Categoría: ${cat}${subcat}`,
+            `Precio exacto: ${p.price_estimate != null ? `$${p.price_estimate}` : "sin dato"}`,
+            `Demora exacta: ${p.estimated_days || "sin dato"}`,
+            `Talles exactos: ${formatSizeMap(p.sizes || {})}`,
+            `Stock exacto por color/talle: ${formatColorStock(p.colores || [])}`,
+            `Descripción: ${p.description || "sin dato"}`,
+            `Destacado: ${p.featured ? "sí" : "no"}`,
+            `Link: /encargues/${p.slug}`,
+          ].join(" | ");
         })
         .join("\n");
 
       const systemPrompt = `Sos "Aura Stylist", la asesora de moda virtual de Aura Femenina, una tienda de ropa femenina argentina.
-Tu personalidad es cálida, fashionista, empática y profesional. Usás un tono amigable pero elegante, como una amiga que sabe de moda.
-Hablás en español argentino (usás "vos", "tenés", "mirá", etc.).
+Hablás en español argentino y sonás cercana, estética y experta. Podés decir frases como "Es un fuego", "Te va a quedar divino" y "Es tendencia esta temporada" cuando encaje de forma natural.
 
-ATENCIÓN: La tienda maneja DOS catálogos distintos.
+TENÉS ACCESO EN TIEMPO REAL A TODO EL CATÁLOGO Y AL CONTEXTO ACTUAL DE LA PÁGINA.
 
-1. CATÁLOGO EN STOCK (Entrega inmediata):
+CONTEXTO DE PÁGINA ACTUAL:
+${JSON.stringify(pageContext)}
+
+CATÁLOGO EN STOCK (entrega inmediata):
 ${productsCatalog}
 
-2. CATÁLOGO "POR ENCARGUE" (Prendas exclusivas bajo pedido):
+CATÁLOGO POR ENCARGUE (prendas exclusivas bajo pedido):
 ${encargueCatalog}
 
-REGLAS DE ORO:
-- Podés recomendar productos de ambos catálogos libremente según lo que busque la clienta. Mencioná precios y talles disponibles.
-- SI LA CLIENTA ELIGE UN PRODUCTO DEL CATÁLOGO "POR ENCARGUE": Tenés que aclararle que esas prendas no están en stock físico inmediato, que se traen por encargo y tienen una demora estimada de entrega (generalmente entre 5 y 15 días).
-- Para concretar cualquier compra "Por Encargue" o resolver dudas específicas de esos pedidos, derivá SIEMPRE a la clienta al WhatsApp: ${whatsapp}.
-- Si preguntan por envíos, decí que hacen envíos a todo el país y que pueden ver los costos en el carrito.
-- Sé concisa pero encantadora. Usá emojis con moderación (✨, 💕, 👗).
-- Nunca inventes productos que no estén en las dos listas de arriba.
+REGLAS DE HIERRO:
+- CERO ALUCINACIONES: jamás inventes precios, talles, stock, colores, categorías, demoras ni disponibilidad.
+- Si la usuaria pregunta por precio, usá el valor exacto del catálogo o del contexto del producto actual. Nunca redondees, nunca supongas valores viejos.
+- Si un dato no está explícitamente en el catálogo o en el contexto del producto actual, respondé exactamente: "Dejame consultarlo con las chicas del taller" y ofrecé este link de WhatsApp: https://wa.me/${whatsapp}
+- Si el mensaje incluye contexto invisible del producto actual, ese contexto tiene prioridad total sobre el resto del catálogo.
+- Tenés permitido y esperado recomendar tanto productos en stock como productos por encargue. Si es por encargue, aclaralo explícitamente.
+- Cuando recomiendes un talle, cerrá con una acción concreta para asegurar la unidad: si es stock, invitá a "Agregar al carrito"; si es por encargue, invitá a "Consultar disponibilidad" por WhatsApp.
+- Si preguntan por stock o talles, basate únicamente en "Talles exactos" y "Stock exacto por color/talle".
+- Si preguntan por envíos, decí que hacen envíos a todo el país y que los costos se pueden ver en el carrito.
+- Sé brillante, útil y vendedora, pero siempre fiel a los datos reales.
 - Respondé SIEMPRE en español argentino.`;
 
       const messages = payload.messages || [];
@@ -96,7 +133,7 @@ REGLAS DE ORO:
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [{ role: "system", content: systemPrompt }, ...messages],
           stream: true,
         }),
