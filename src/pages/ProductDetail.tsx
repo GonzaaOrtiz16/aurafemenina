@@ -139,7 +139,19 @@ export default function ProductDetail() {
   };
 
   const handleSizeAdvisor = () => {
-    openAuraStylist(`Ayuda con talle para ${product.name}. Talles: ${availableSizes.join(", ")}`);
+    openAuraStylist({
+      initialMessage: `Estoy viendo ${product.name} y necesito ayuda real con el talle. Los talles disponibles exactos son: ${availableSizes.join(", ") || "sin dato"}.`,
+      productContext: {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        price: product.price,
+        colores: product.colores ?? [],
+        sizes: product.sizes ?? [],
+        description: product.description ?? null,
+        catalogType: "stock",
+      },
+    });
   };
 
   return (

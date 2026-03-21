@@ -1,19 +1,63 @@
 import { useState, useRef, useEffect, useCallback } from "react";
-import { Sparkles, X, Send, Loader2, Camera } from "lucide-react";
+import { Sparkles, X, Send, Loader2 } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import { motion, AnimatePresence } from "framer-motion";
 
 interface Message {
-  role: "user" | "assistant";
+  role: "user" | "assistant" | "system";
   content: string;
+}
+
+interface AuraStylistProductContext {
+  id: string;
+  name: string;
+  slug?: string;
+  price?: number | string | null;
+  priceEstimate?: number | string | null;
+  colores?: unknown;
+  sizes?: unknown;
+  estimatedDays?: string | null;
+  description?: string | null;
+  catalogType?: "stock" | "encargue";
+}
+
+interface OpenAuraStylistOptions {
+  initialMessage?: string;
+  productContext?: AuraStylistProductContext;
 }
 
 const CHAT_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
 
 // Singleton state for opening from outside
-let externalOpenFn: ((msg?: string) => void) | null = null;
-export function openAuraStylist(initialMessage?: string) {
-  externalOpenFn?.(initialMessage);
+let externalOpenFn: ((options?: OpenAuraStylistOptions | string) => void) | null = null;
+
+const buildSystemMessages = (productContext?: AuraStylistProductContext): Message[] => {
+  if (!productContext) return [];
+
+  const exactPrice = productContext.catalogType === "encargue"
+    ? productContext.priceEstimate
+    : productContext.price;
+
+  return [{
+    role: "system",
+    content: [
+      "[CONTEXTO INVISIBLE DEL PRODUCTO ACTUAL]",
+      `ID: ${productContext.id}`,
+      `Nombre: ${productContext.name}`,
+      `Slug: ${productContext.slug || "sin-slug"}`,
+      `Catálogo: ${productContext.catalogType === "encargue" ? "por encargue" : "stock inmediato"}`,
+      `Precio: ${exactPrice ?? "sin dato"}`,
+      `Stock: ${JSON.stringify(productContext.colores ?? null)}`,
+      `Talles: ${JSON.stringify(productContext.sizes ?? null)}`,
+      `Demora estimada: ${productContext.estimatedDays || "sin dato"}`,
+      `Descripción: ${productContext.description || "sin dato"}`,
+      `Link actual: ${window.location.href}`,
+    ].join("\n"),
+  }];
+};
+
+export function openAuraStylist(options?: OpenAuraStylistOptions | string) {
+  externalOpenFn?.(options);
 }
 
 export default function AuraStylist() {
@@ -23,6 +67,7 @@ export default function AuraStylist() {
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const visibleMessages = messages.filter((message) => message.role !== "system");
 
   const sendMessageWithText = useCallback(async (text: string) => {
     if (!text || loading) return;
@@ -44,7 +89,13 @@ export default function AuraStylist() {
         },
         body: JSON.stringify({
           action: "chat",
-          payload: { messages: newMessages },
+          payload: {
+            messages: newMessages,
+            pageContext: {
+              pathname: window.location.pathname,
+              href: window.location.href,
+            },
+          },
         }),
       });
 
@@ -100,10 +151,16 @@ export default function AuraStylist() {
 
   // Register external open function
   useEffect(() => {
-    externalOpenFn = (initialMessage?: string) => {
+    externalOpenFn = (options?: OpenAuraStylistOptions | string) => {
+      const resolvedOptions = typeof options === "string"
+        ? { initialMessage: options }
+        : options;
+
       setOpen(true);
-      if (initialMessage) {
-        setTimeout(() => sendMessageWithText(initialMessage), 300);
+      setMessages(buildSystemMessages(resolvedOptions?.productContext));
+
+      if (resolvedOptions?.initialMessage) {
+        setTimeout(() => sendMessageWithText(resolvedOptions.initialMessage || ""), 300);
       }
     };
     return () => { externalOpenFn = null; };
@@ -164,8 +221,8 @@ export default function AuraStylist() {
             </div>
 
             {/* Messages */}
-            <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
-              {messages.length === 0 && (
+              <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+               {visibleMessages.length === 0 && (
                 <div className="text-center py-10">
                   <Sparkles className="h-8 w-8 text-muted-foreground/20 mx-auto mb-4" />
                   <p className="text-[11px] text-muted-foreground leading-relaxed">
@@ -175,7 +232,7 @@ export default function AuraStylist() {
                   </p>
                 </div>
               )}
-              {messages.map((msg, i) => (
+              {visibleMessages.map((msg, i) => (
                 <div key={i} className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}>
                   <div
                     className={`max-w-[85%] px-4 py-3 text-xs leading-relaxed ${
@@ -194,7 +251,7 @@ export default function AuraStylist() {
                   </div>
                 </div>
               ))}
-              {loading && messages[messages.length - 1]?.role !== "assistant" && (
+              {loading && visibleMessages[visibleMessages.length - 1]?.role !== "assistant" && (
                 <div className="flex justify-start">
                   <div className="bg-secondary/60 border border-border/50 px-4 py-3">
                     <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />

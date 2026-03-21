@@ -103,9 +103,20 @@ export default function EncargueDetail() {
   };
 
   const handleSizeAdvisor = () => {
-    openAuraStylist(
-      `¡Hola! Estoy viendo "${product.name}" por encargue y necesito ayuda para elegir mi talle. Los talles disponibles son: ${availableSizes.join(", ")}. ¿Me ayudás?`
-    );
+    openAuraStylist({
+      initialMessage: `¡Hola! Estoy viendo "${product.name}" por encargue y necesito ayuda para elegir mi talle. Los talles disponibles exactos son: ${availableSizes.join(", ") || "sin dato"}. ¿Me ayudás?`,
+      productContext: {
+        id: product.id,
+        name: product.name,
+        slug: product.slug,
+        priceEstimate: product.price_estimate,
+        colores: product.colores ?? [],
+        sizes: product.sizes ?? [],
+        estimatedDays: product.estimated_days ?? null,
+        description: product.description ?? null,
+        catalogType: "encargue",
+      },
+    });
   };
 
   return (
