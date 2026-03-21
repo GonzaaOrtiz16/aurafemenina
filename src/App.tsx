@@ -55,22 +55,32 @@ const App = () => (
           <ScrollToTop />
           <Suspense fallback={<PageFallback />}>
             <Routes>
+              {/* Rutas Principales */}
               <Route path="/" element={<Index />} />
               <Route path="/productos" element={<Products />} />
               <Route path="/producto/:slug" element={<ProductDetail />} />
               <Route path="/carrito" element={<CartPage />} />
+              
+              {/* Información y Ayuda */}
               <Route path="/preguntas-frecuentes" element={<FAQ />} />
               <Route path="/como-comprar" element={<HowToBuy />} />
               <Route path="/contacto" element={<Contact />} />
+              
+              {/* Autenticación de Usuarios */}
               <Route path="/login" element={<Login />} />
               <Route path="/registro" element={<Register />} />
               <Route path="/recuperar-password" element={<ForgotPassword />} />
               <Route path="/reset-password" element={<ResetPassword />} />
+              
+              {/* Sistema de Pedidos por Encargue */}
               <Route path="/encargues" element={<Encargues />} />
-              {/* Ruta para el detalle del producto por encargue */}
               <Route path="/encargue/:slug" element={<EncargueDetail />} />
+              
+              {/* Administración */}
               <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/admin" element={<AdminDashboard />} />
+              
+              {/* Error 404 */}
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Suspense>
