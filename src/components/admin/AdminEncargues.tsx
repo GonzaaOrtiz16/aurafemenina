@@ -4,13 +4,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
+import { PRODUCT_SIZES } from "@/lib/product-sizes";
 import { Plus, Pencil, Trash2, X, Save, Loader2, Upload, Image as ImageIcon, Tag, Palette, Sparkles, ChevronRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
 const GEMINI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
-const SIZES = ["XS", "S", "M", "L", "XL", "XXL", "28", "30", "32", "34", "36", "38", "40", "42", "44"];
 
 interface ColorVariant {
   nombre: string;
@@ -444,7 +444,7 @@ export default function AdminEncargues() {
                   <div>
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground mb-2">Talles para {color.nombre || "este color"}</p>
                     <div className="flex flex-wrap gap-1.5">
-                      {SIZES.map((s) => (
+                      {PRODUCT_SIZES.map((s) => (
                         <button key={s} type="button" onClick={() => toggleSizeForColor(cIdx, s)}
                           className={`px-2.5 py-1 rounded-md border text-[10px] font-bold transition-all ${s in color.sizes ? "bg-foreground text-background border-foreground" : "border-border hover:bg-secondary text-muted-foreground"}`}>
                           {s}

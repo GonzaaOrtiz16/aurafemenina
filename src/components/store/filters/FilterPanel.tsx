@@ -1,6 +1,7 @@
 import { memo } from "react";
 import { X, ChevronRight } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { PRODUCT_SIZES } from "@/lib/product-sizes";
 
 interface FilterColor {
   nombre: string;
@@ -32,8 +33,6 @@ interface FilterPanelProps {
   onMaxPriceChange: (price: number) => void;
   onClearFilters: () => void;
 }
-
-const ALL_SIZES = ["XS", "S", "M", "L", "XL", "XXL", "34", "36", "38", "40", "42", "44"];
 
 function FilterPanel({
   categories,
@@ -133,7 +132,7 @@ function FilterPanel({
           Talle
         </h3>
         <div className="grid grid-cols-4 gap-2">
-          {ALL_SIZES.map((size) => (
+          {PRODUCT_SIZES.map((size) => (
             <button
               key={size}
               onClick={() => onSizeChange(activeSize === size ? "" : size)}
