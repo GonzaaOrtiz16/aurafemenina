@@ -27,6 +27,7 @@ export default function ProductDetail() {
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColorIdx, setSelectedColorIdx] = useState<number>(-1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [quantity, setQuantity] = useState(1);
 
   const [emblaRef, emblaApi] = useEmblaCarousel({
     loop: false,
