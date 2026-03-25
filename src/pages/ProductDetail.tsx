@@ -196,7 +196,7 @@ export default function ProductDetail() {
               <div ref={emblaRef} className="overflow-hidden bg-secondary rounded-sm shadow-sm h-full">
                 <div className="flex aspect-[3/4] h-full">
                   {product.images.map((img: string, idx: number) => (
-                    <div key={idx} className="flex-[0_0_100%] min-w-0 bg-white">
+                    <div key={idx} className="flex-[0_0_100%] min-w-0 bg-secondary">
                       <ZoomableImage 
                         src={img} 
                         alt={product.name} 

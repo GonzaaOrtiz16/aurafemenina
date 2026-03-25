@@ -38,6 +38,7 @@ export default function CompletaElLook({ product, allProducts }: Props) {
         payload: {
           productName: product.name,
           productCategory: product.category,
+          productSubcategory: product.subcategory || "",
           catalog: otherProducts,
         },
       }),
