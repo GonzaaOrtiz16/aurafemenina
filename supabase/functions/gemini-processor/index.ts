@@ -284,7 +284,7 @@ Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}`,
 
     // ── ACTION: complete-look ──
     if (action === "complete-look") {
-      const { productName, productCategory, catalog } = payload;
+      const { productName, productCategory, productSubcategory, catalog } = payload;
 
       const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
@@ -293,16 +293,38 @@ Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}`,
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
+          model: "google/gemini-3-flash-preview",
           messages: [
             {
               role: "system",
-              content: `Sos una estilista de moda experta. Dado un producto principal, elegí exactamente 2 productos complementarios del catálogo para armar un outfit completo.
+              content: `Sos una estilista de moda profesional argentina trabajando para "Aura Femenina", una tienda de ropa femenina.
+
+Tu misión es armar outfits COMPLETOS y coherentes. Seguí estas reglas estrictas:
+
+## REGLAS DE COMBINACIÓN
+1. NUNCA recomiendes 2 prendas de la misma categoría (ej: no 2 remeras, no 2 pantalones, no 2 jeans).
+2. Un outfit se arma combinando PARTES DIFERENTES del cuerpo:
+   - PARTE SUPERIOR: remeras, tops, bodys, buzos, camperas, camisas
+   - PARTE INFERIOR: jeans, pantalones, polleras, shorts
+   - OUTER/CAPAS: camperas, sacos, blazers
+   - CONJUNTOS: ya incluyen arriba+abajo, combiná con una campera o accesorio
+   - VESTIDOS: ya son un outfit completo, combiná con campera/abrigo
+
+3. Lógica de combinación según la categoría del producto principal:
+   - Si es REMERA/TOP/BODY → recomendá un PANTALÓN/JEAN/POLLERA + opcionalmente una CAMPERA
+   - Si es JEAN/PANTALÓN/POLLERA → recomendá una REMERA/TOP + opcionalmente una CAMPERA
+   - Si es CAMPERA/BUZO → recomendá un PANTALÓN/JEAN + una REMERA/TOP
+   - Si es CONJUNTO → recomendá una CAMPERA o prenda complementaria
+   - Si es VESTIDO → recomendá una CAMPERA/ABRIGO
+
+4. Priorizá que los estilos y colores combinen estéticamente.
+5. Elegí EXACTAMENTE 2 productos complementarios.
+
 Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
             },
             {
               role: "user",
-              content: `Producto principal: "${productName}" (${productCategory})\n\nCatálogo:\n${catalog}`,
+              content: `Producto principal: "${productName}" (Categoría: ${productCategory}${productSubcategory ? `, Sub: ${productSubcategory}` : ""})\n\nCatálogo disponible:\n${catalog}`,
             },
           ],
         }),
