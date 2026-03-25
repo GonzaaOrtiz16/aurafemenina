@@ -24,7 +24,7 @@ export default function CompletaElLook({ product, allProducts }: Props) {
 
     const otherProducts = allProducts
       .filter((p) => p.id !== product.id)
-      .map((p) => `ID:${p.id}|${p.name}|${p.category}|$${p.price}`)
+      .map((p) => `ID:${p.id}|${p.name}|Cat:${p.category}|Sub:${p.subcategory || ""}|$${p.price}`)
       .join("\n");
 
     fetch(GEMINI_URL, {
