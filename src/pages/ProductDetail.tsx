@@ -130,8 +130,9 @@ export default function ProductDetail() {
       toast({ title: "Seleccioná un talle", variant: "destructive" });
       return;
     }
-    addItem(product, selectedSize, selectedColorIdx >= 0 ? colors[selectedColorIdx].nombre : "");
-    toast({ title: "¡Agregado al carrito!" });
+    addItem(product, selectedSize, selectedColorIdx >= 0 ? colors[selectedColorIdx].nombre : "", quantity);
+    toast({ title: `¡${quantity > 1 ? quantity + " unidades agregadas" : "Agregado"} al carrito!` });
+    setQuantity(1);
   };
 
   const getStockForSize = (size: string): number => {

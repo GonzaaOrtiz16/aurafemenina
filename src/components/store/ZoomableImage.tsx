@@ -193,7 +193,7 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
         src={src}
         alt={alt}
         draggable={false}
-        className="h-full w-full object-cover select-none pointer-events-none"
+        className="h-full w-full object-contain select-none pointer-events-none"
         style={{
           transform: `translate(${translate.x}px, ${translate.y}px) scale(${scale})`,
           transition: scale === 1 && !isPinching.current ? "transform 0.2s ease-out" : "none",
