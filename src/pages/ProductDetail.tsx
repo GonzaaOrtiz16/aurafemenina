@@ -6,7 +6,7 @@ import { useCart } from "@/context/CartContext";
 import { formatPrice } from "@/lib/shipping";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ShoppingBag, ChevronLeft, ChevronUp, ChevronDown, Sparkles } from "lucide-react";
+import { ShoppingBag, ChevronLeft, ChevronUp, ChevronDown, Sparkles, Plus, Minus } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { ProductColorVariant } from "@/types/product";
 import useEmblaCarousel from "embla-carousel-react";
