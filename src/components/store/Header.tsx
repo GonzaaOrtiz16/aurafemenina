@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Menu, ShoppingBag, Search, ChevronDown, X, LogOut, User, Camera } from "lucide-react";
+import { useSubcategories } from "@/hooks/useProducts";
 import { useCart } from "@/context/CartContext";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useCategories } from "@/hooks/useProducts";
@@ -262,17 +263,118 @@ export default function Header() {
       </nav>
 
       {/* Mobile sub-bar */}
-      <div className="md:hidden flex h-12 z-40 bg-card border-t border-border">
+      <MobileSubBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        handleSearch={handleSearch}
+        categories={categories}
+      />
+    </header>
+  );
+}
+
+/* ── Mobile Sub-Bar with category dropdown ── */
+function MobileSubBar({
+  searchTerm,
+  setSearchTerm,
+  handleSearch,
+  categories,
+}: {
+  searchTerm: string;
+  setSearchTerm: (v: string) => void;
+  handleSearch: (e?: React.FormEvent) => void;
+  categories: { id: string; name: string; slug: string }[];
+}) {
+  const [open, setOpen] = useState(false);
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
+
+  return (
+    <div className="md:hidden relative z-40 bg-card border-t border-border">
+      <div className="flex h-12">
         <form onSubmit={handleSearch} className="flex-1 flex items-center border-r border-border px-4">
-          <input type="text" placeholder="BUSCAR..."
+          <input
+            type="text"
+            placeholder="BUSCAR..."
             className="w-full text-[10px] font-bold tracking-[0.2em] outline-none bg-transparent placeholder:text-muted-foreground/40"
-            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
           <button type="submit"><Search className="w-4 h-4 text-muted-foreground/40" /></button>
         </form>
-        <Link to="/productos" className="flex-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-accent transition-colors">
+        <button
+          onClick={() => setOpen(!open)}
+          className="flex-1 flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-accent transition-colors"
+        >
           PRODUCTOS
-        </Link>
+          <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${open ? "rotate-180" : ""}`} />
+        </button>
       </div>
-    </header>
+
+      {open && (
+        <div className="absolute top-full left-0 right-0 bg-card border-t border-border shadow-lg animate-fade-in max-h-[60vh] overflow-y-auto">
+          <Link
+            to="/productos"
+            onClick={() => setOpen(false)}
+            className="block px-6 py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-foreground hover:text-accent hover:bg-secondary/50 transition-all border-b border-border/30"
+          >
+            VER TODO
+          </Link>
+          {categories.map((cat) => (
+            <MobileCategoryItem
+              key={cat.id}
+              category={cat}
+              expanded={expandedCat === cat.id}
+              onToggle={() => setExpandedCat(expandedCat === cat.id ? null : cat.id)}
+              onClose={() => setOpen(false)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MobileCategoryItem({
+  category,
+  expanded,
+  onToggle,
+  onClose,
+}: {
+  category: { id: string; name: string; slug: string };
+  expanded: boolean;
+  onToggle: () => void;
+  onClose: () => void;
+}) {
+  const { data: subcategories = [] } = useSubcategories(expanded ? category.id : undefined);
+
+  return (
+    <div className="border-b border-border/30">
+      <div className="flex items-center">
+        <Link
+          to={`/productos?categoria=${category.slug}`}
+          onClick={onClose}
+          className="flex-1 px-6 py-3 text-[11px] font-bold uppercase tracking-[0.15em] text-foreground hover:text-accent transition-colors"
+        >
+          {category.name}
+        </Link>
+        <button onClick={onToggle} className="px-4 py-3">
+          <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
+        </button>
+      </div>
+      {expanded && subcategories.length > 0 && (
+        <div className="bg-secondary/30">
+          {subcategories.map((sub) => (
+            <Link
+              key={sub.id}
+              to={`/productos?categoria=${category.slug}&subcategoria=${sub.slug}`}
+              onClick={onClose}
+              className="block px-10 py-2.5 text-[10px] font-bold uppercase tracking-[0.1em] text-muted-foreground hover:text-accent transition-colors"
+            >
+              {sub.name}
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
