@@ -345,7 +345,8 @@ function MobileCategoryItem({
   onToggle: () => void;
   onClose: () => void;
 }) {
-  const { data: subcategories = [] } = useSubcategories(expanded ? category.id : undefined);
+  const { data: subcategories = [] } = useSubcategories(category.id);
+  const hasSubs = subcategories.length > 0;
 
   return (
     <div className="border-b border-border/30">
@@ -357,9 +358,11 @@ function MobileCategoryItem({
         >
           {category.name}
         </Link>
-        <button onClick={onToggle} className="px-4 py-3">
-          <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
-        </button>
+        {hasSubs && (
+          <button onClick={onToggle} className="px-4 py-3">
+            <ChevronDown className={`w-3 h-3 text-muted-foreground transition-transform duration-300 ${expanded ? "rotate-180" : ""}`} />
+          </button>
+        )}
       </div>
       {expanded && subcategories.length > 0 && (
         <div className="bg-secondary/30">
