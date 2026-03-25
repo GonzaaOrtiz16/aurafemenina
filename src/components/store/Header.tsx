@@ -262,17 +262,12 @@ export default function Header() {
       </nav>
 
       {/* Mobile sub-bar */}
-      <div className="md:hidden flex h-12 z-40 bg-card border-t border-border">
-        <form onSubmit={handleSearch} className="flex-1 flex items-center border-r border-border px-4">
-          <input type="text" placeholder="BUSCAR..."
-            className="w-full text-[10px] font-bold tracking-[0.2em] outline-none bg-transparent placeholder:text-muted-foreground/40"
-            value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} />
-          <button type="submit"><Search className="w-4 h-4 text-muted-foreground/40" /></button>
-        </form>
-        <Link to="/productos" className="flex-1 flex items-center justify-center text-[10px] font-bold uppercase tracking-widest text-foreground hover:text-accent transition-colors">
-          PRODUCTOS
-        </Link>
-      </div>
+      <MobileSubBar
+        searchTerm={searchTerm}
+        setSearchTerm={setSearchTerm}
+        handleSearch={handleSearch}
+        categories={categories}
+      />
     </header>
   );
 }
