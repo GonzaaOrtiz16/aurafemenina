@@ -262,19 +262,51 @@ export default function ProductDetail() {
                   <div className="grid grid-cols-4 gap-2">
                     {availableSizes.map((size) => {
                       const stock = getStockForSize(size);
+                      const isOOS = stock <= 0;
                       return (
                         <button
                           key={size}
-                          onClick={() => setSelectedSize(size)}
-                          disabled={stock <= 0}
-                          className={`h-12 border transition-all text-xs font-bold uppercase ${
-                            selectedSize === size ? "bg-foreground text-background border-foreground" : "bg-background border-border hover:border-foreground disabled:opacity-20"
+                          onClick={() => { if (!isOOS) { setSelectedSize(size); setQuantity(1); } }}
+                          disabled={isOOS}
+                          className={`h-12 border transition-all text-xs font-bold uppercase relative ${
+                            isOOS
+                              ? "bg-background border-border text-muted-foreground/40 line-through cursor-not-allowed"
+                              : selectedSize === size
+                                ? "bg-foreground text-background border-foreground"
+                                : "bg-background border-border hover:border-foreground"
                           }`}
                         >
                           {size}
                         </button>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Cantidad */}
+              {selectedSize && (
+                <div>
+                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold mb-4">Cantidad:</p>
+                  <div className="flex items-center gap-0 border border-border w-fit">
+                    <button
+                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                      className="h-12 w-12 flex items-center justify-center hover:bg-secondary transition-colors"
+                    >
+                      <Minus className="w-4 h-4" />
+                    </button>
+                    <span className="h-12 w-14 flex items-center justify-center text-sm font-bold border-x border-border">
+                      {quantity}
+                    </span>
+                    <button
+                      onClick={() => {
+                        const maxStock = getStockForSize(selectedSize);
+                        setQuantity(Math.min(hasVariants ? maxStock : 10, quantity + 1));
+                      }}
+                      className="h-12 w-12 flex items-center justify-center hover:bg-secondary transition-colors"
+                    >
+                      <Plus className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
               )}
