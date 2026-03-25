@@ -95,9 +95,7 @@ export default function ProductDetail() {
   const getAvailableSizes = (): string[] => {
     if (hasVariants) {
       if (selectedColorIdx >= 0 && colors[selectedColorIdx]) {
-        return Object.entries(colors[selectedColorIdx].sizes)
-          .filter(([_, stock]) => stock > 0)
-          .map(([size]) => size);
+        return Object.keys(colors[selectedColorIdx].sizes);
       }
       return [];
     }
