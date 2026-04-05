@@ -48,14 +48,19 @@ export default function ProductDetail() {
   }, [emblaApi, onSelect]);
 
   useEffect(() => {
-    if (product) {
+    if (product && isAuthenticated) {
       setCurrentImageIndex(0);
       setSelectedSize("");
-      const colors = getColors();
-      setSelectedColorIdx(colors.length === 1 ? 0 : -1);
+      const raw = product.colores || [];
+      const parsedColors = raw.map((c: any) => ({
+        nombre: c.nombre || "",
+        hex: c.hex || "#000000",
+        sizes: c.sizes && typeof c.sizes === "object" ? c.sizes : {},
+      }));
+      setSelectedColorIdx(parsedColors.length === 1 ? 0 : -1);
       emblaApi?.scrollTo(0, true);
     }
-  }, [product, emblaApi]);
+  }, [product, emblaApi, isAuthenticated]);
 
   const scrollTo = (idx: number) => emblaApi?.scrollTo(idx);
   const scrollPrev = () => emblaApi?.scrollPrev();
