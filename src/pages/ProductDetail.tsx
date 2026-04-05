@@ -122,7 +122,7 @@ export default function ProductDetail() {
     if (!newSizes.includes(selectedSize)) setSelectedSize("");
   };
 
-  const { isAuthenticated } = useCart();
+  
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
