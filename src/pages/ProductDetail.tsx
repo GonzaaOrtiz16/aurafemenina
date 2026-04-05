@@ -20,7 +20,7 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading } = useProductBySlug(slug || "");
   const { data: allProducts = [] } = useProducts();
-  const { addItem } = useCart();
+  const { addItem, isAuthenticated } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -48,16 +48,20 @@ export default function ProductDetail() {
   }, [emblaApi, onSelect]);
 
   useEffect(() => {
-    if (product) {
+    if (product && isAuthenticated) {
       setCurrentImageIndex(0);
       setSelectedSize("");
-      const colors = getColors();
-      setSelectedColorIdx(colors.length === 1 ? 0 : -1);
+      const raw = product.colores || [];
+      const parsedColors = raw.map((c: any) => ({
+        nombre: c.nombre || "",
+        hex: c.hex || "#000000",
+        sizes: c.sizes && typeof c.sizes === "object" ? c.sizes : {},
+      }));
+      setSelectedColorIdx(parsedColors.length === 1 ? 0 : -1);
       emblaApi?.scrollTo(0, true);
     }
-  }, [product, emblaApi]);
+  }, [product, emblaApi, isAuthenticated]);
 
-  // Funciones de navegación de galería
   const scrollTo = (idx: number) => emblaApi?.scrollTo(idx);
   const scrollPrev = () => emblaApi?.scrollPrev();
   const scrollNext = () => emblaApi?.scrollNext();
@@ -77,6 +81,15 @@ export default function ProductDetail() {
     });
   }, [product]);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast({ title: "Iniciá sesión", description: "Necesitás una cuenta para ver los productos", variant: "destructive" });
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
   if (isLoading) return <Layout><div className="container py-10"><Skeleton className="h-[500px]" /></div></Layout>;
   if (!product) return null;
 
@@ -112,7 +125,7 @@ export default function ProductDetail() {
     if (!newSizes.includes(selectedSize)) setSelectedSize("");
   };
 
-  const { isAuthenticated } = useCart();
+  
 
   const handleAddToCart = () => {
     if (!isAuthenticated) {
