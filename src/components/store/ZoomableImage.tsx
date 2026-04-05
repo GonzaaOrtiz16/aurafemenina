@@ -110,7 +110,7 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
       isPanning.current = true;
       panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       startTranslate.current = { ...translate };
-      e.preventDefault();
+      // Don't preventDefault here — allow browser to handle scroll if not zoomed enough
     }
   }, [scale, translate]);
 
@@ -177,7 +177,7 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
   return (
     <div
       ref={containerRef}
-      className="w-full h-full overflow-hidden touch-none"
+      className={`w-full h-full overflow-hidden ${scale > 1 ? 'touch-none' : 'touch-pan-y'}`}
       style={{ cursor: cursorStyle }}
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
