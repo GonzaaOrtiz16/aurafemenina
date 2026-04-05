@@ -20,9 +20,19 @@ export default function ProductDetail() {
   const { slug } = useParams<{ slug: string }>();
   const { data: product, isLoading } = useProductBySlug(slug || "");
   const { data: allProducts = [] } = useProducts();
-  const { addItem } = useCart();
+  const { addItem, isAuthenticated } = useCart();
   const { toast } = useToast();
   const navigate = useNavigate();
+
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      toast({ title: "Iniciá sesión", description: "Necesitás una cuenta para ver los productos", variant: "destructive" });
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, isLoading, navigate]);
+
+  if (!isAuthenticated) return null;
 
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColorIdx, setSelectedColorIdx] = useState<number>(-1);
