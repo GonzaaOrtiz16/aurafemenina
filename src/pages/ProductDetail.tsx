@@ -24,16 +24,6 @@ export default function ProductDetail() {
   const { toast } = useToast();
   const navigate = useNavigate();
 
-  // Redirect to login if not authenticated
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      toast({ title: "Iniciá sesión", description: "Necesitás una cuenta para ver los productos", variant: "destructive" });
-      navigate("/login", { replace: true });
-    }
-  }, [isAuthenticated, isLoading, navigate]);
-
-  if (!isAuthenticated) return null;
-
   const [selectedSize, setSelectedSize] = useState("");
   const [selectedColorIdx, setSelectedColorIdx] = useState<number>(-1);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
@@ -67,7 +57,6 @@ export default function ProductDetail() {
     }
   }, [product, emblaApi]);
 
-  // Funciones de navegación de galería
   const scrollTo = (idx: number) => emblaApi?.scrollTo(idx);
   const scrollPrev = () => emblaApi?.scrollPrev();
   const scrollNext = () => emblaApi?.scrollNext();
@@ -87,6 +76,15 @@ export default function ProductDetail() {
     });
   }, [product]);
 
+  // Redirect to login if not authenticated
+  useEffect(() => {
+    if (!isAuthenticated) {
+      toast({ title: "Iniciá sesión", description: "Necesitás una cuenta para ver los productos", variant: "destructive" });
+      navigate("/login", { replace: true });
+    }
+  }, [isAuthenticated, navigate]);
+
+  if (!isAuthenticated) return null;
   if (isLoading) return <Layout><div className="container py-10"><Skeleton className="h-[500px]" /></div></Layout>;
   if (!product) return null;
 
