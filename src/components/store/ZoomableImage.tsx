@@ -6,6 +6,8 @@ interface ZoomableImageProps {
   onZoomChange?: (zoomed: boolean) => void;
 }
 
+type GestureAxis = "undetermined" | "x" | "y";
+
 export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [scale, setScale] = useState(1);
@@ -18,6 +20,8 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
   const isPinching = useRef(false);
   const isPanning = useRef(false);
   const panStart = useRef({ x: 0, y: 0 });
+  const touchStart = useRef({ x: 0, y: 0 });
+  const gestureAxis = useRef<GestureAxis>("undetermined");
 
   // Desktop mouse drag state
   const isMouseDragging = useRef(false);
@@ -25,6 +29,7 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
 
   const MAX_SCALE = 3;
   const MIN_SCALE = 1;
+  const GESTURE_LOCK_THRESHOLD = 10;
 
   const clampTranslate = useCallback((tx: number, ty: number, s: number) => {
     if (s <= 1) return { x: 0, y: 0 };
@@ -53,6 +58,24 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
     setIsZoomed(false);
     onZoomChange?.(false);
   }, [onZoomChange]);
+
+  const resetGestureAxis = useCallback(() => {
+    gestureAxis.current = "undetermined";
+  }, []);
+
+  const resolveGestureAxis = useCallback((clientX: number, clientY: number) => {
+    if (gestureAxis.current !== "undetermined") return gestureAxis.current;
+
+    const dx = clientX - touchStart.current.x;
+    const dy = clientY - touchStart.current.y;
+
+    if (Math.abs(dx) < GESTURE_LOCK_THRESHOLD && Math.abs(dy) < GESTURE_LOCK_THRESHOLD) {
+      return "undetermined";
+    }
+
+    gestureAxis.current = Math.abs(dx) > Math.abs(dy) ? "x" : "y";
+    return gestureAxis.current;
+  }, []);
 
   // ── Desktop: scroll wheel zoom ──
   const handleWheel = useCallback((e: React.WheelEvent) => {
@@ -102,6 +125,7 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
     if (e.touches.length === 2) {
       isPinching.current = true;
       isPanning.current = false;
+      resetGestureAxis();
       lastDistance.current = getDistance(e.touches[0], e.touches[1]);
       lastCenter.current = getCenter(e.touches[0], e.touches[1]);
       startTranslate.current = { ...translate };
@@ -111,8 +135,24 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
       panStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
       startTranslate.current = { ...translate };
       // Don't preventDefault here — allow browser to handle scroll if not zoomed enough
+    } else if (e.touches.length === 1) {
+      isPinching.current = false;
+      isPanning.current = false;
+      touchStart.current = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      resetGestureAxis();
     }
-  }, [scale, translate]);
+  }, [scale, translate, resetGestureAxis]);
+
+  const handleTouchMoveCapture = useCallback((e: React.TouchEvent) => {
+    if (scale > 1 || isPinching.current || e.touches.length !== 1) return;
+
+    const axis = resolveGestureAxis(e.touches[0].clientX, e.touches[0].clientY);
+
+    if (axis === "y") {
+      e.stopPropagation();
+      e.nativeEvent.stopImmediatePropagation?.();
+    }
+  }, [scale, resolveGestureAxis]);
 
   const handleTouchMove = useCallback((e: React.TouchEvent) => {
     if (isPinching.current && e.touches.length === 2) {
@@ -133,6 +173,9 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
       lastDistance.current = dist;
       lastCenter.current = center;
       startTranslate.current = newT;
+    } else if (scale <= 1 && e.touches.length === 1) {
+      const axis = resolveGestureAxis(e.touches[0].clientX, e.touches[0].clientY);
+      if (axis === "y") return;
     } else if (isPanning.current && e.touches.length === 1 && scale > 1) {
       e.preventDefault();
       const dx = e.touches[0].clientX - panStart.current.x;
@@ -140,15 +183,22 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
       const newT = clampTranslate(startTranslate.current.x + dx, startTranslate.current.y + dy, scale);
       setTranslate(newT);
     }
-  }, [scale, clampTranslate, updateZoomState]);
+  }, [scale, clampTranslate, updateZoomState, resolveGestureAxis]);
 
   const handleTouchEnd = useCallback((e: React.TouchEvent) => {
     if (e.touches.length < 2) isPinching.current = false;
     if (e.touches.length === 0) {
       isPanning.current = false;
+      resetGestureAxis();
       if (scale < 1.1) resetZoom();
     }
-  }, [scale, resetZoom]);
+  }, [scale, resetZoom, resetGestureAxis]);
+
+  const handleTouchCancel = useCallback(() => {
+    isPinching.current = false;
+    isPanning.current = false;
+    resetGestureAxis();
+  }, [resetGestureAxis]);
 
   // ── Double click / double tap ──
   const lastTap = useRef(0);
@@ -177,11 +227,16 @@ export default function ZoomableImage({ src, alt, onZoomChange }: ZoomableImageP
   return (
     <div
       ref={containerRef}
-      className={`w-full h-full overflow-hidden ${scale > 1 ? 'touch-none' : 'touch-pan-y'}`}
-      style={{ cursor: cursorStyle }}
+      className="w-full h-full overflow-hidden"
+      style={{
+        cursor: cursorStyle,
+        touchAction: scale > 1 ? "none" : "pan-y",
+      }}
       onTouchStart={handleTouchStart}
+      onTouchMoveCapture={handleTouchMoveCapture}
       onTouchMove={handleTouchMove}
       onTouchEnd={(e) => { handleTouchEnd(e); handleTap(e); }}
+      onTouchCancel={handleTouchCancel}
       onDoubleClick={handleDoubleClick}
       onWheel={handleWheel}
       onMouseDown={handleMouseDown}
