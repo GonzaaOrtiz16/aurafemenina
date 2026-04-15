@@ -44,6 +44,7 @@ export default function AdminConfig() {
   const { data: contactData, isLoading: l1 } = useSiteSetting<ContactData>("contact");
   const { data: annData, isLoading: l2 } = useSiteSetting<AnnouncementData>("announcement");
   const { data: stepsData, isLoading: l3 } = useSiteSetting<Step[]>("how_to_buy");
+  const { data: shippingData, isLoading: l4 } = useSiteSetting<ShippingRates>("shipping_rates");
   const update = useUpdateSiteSetting();
   const { toast } = useToast();
 
@@ -52,10 +53,15 @@ export default function AdminConfig() {
   });
   const [announcement, setAnnouncement] = useState<AnnouncementData>({ text: "", enabled: true });
   const [steps, setSteps] = useState<Step[]>([]);
+  const [shipping, setShipping] = useState<ShippingRates>({
+    caba: 2500, zona_sur: 2500, gba: 3800, interior: 5500,
+    minimums: { caba: 0, zona_sur: 0, gba: 100000, interior: 100000 },
+  });
 
   useEffect(() => { if (contactData) setContact(contactData); }, [contactData]);
   useEffect(() => { if (annData) setAnnouncement(annData); }, [annData]);
   useEffect(() => { if (stepsData) setSteps(stepsData); }, [stepsData]);
+  useEffect(() => { if (shippingData) setShipping(shippingData); }, [shippingData]);
 
   const saveContact = () => {
     update.mutate({ key: "contact", value: contact }, {
