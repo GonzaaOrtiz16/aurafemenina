@@ -99,7 +99,7 @@ export default function AdminConfig() {
     setSteps(updated);
   };
 
-  if (l1 || l2 || l3) return <p className="text-sm text-muted-foreground">Cargando...</p>;
+  if (l1 || l2 || l3 || l4) return <p className="text-sm text-muted-foreground">Cargando...</p>;
 
   return (
     <div className="max-w-2xl space-y-10">
