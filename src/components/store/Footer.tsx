@@ -57,8 +57,11 @@ export default function Footer() {
             </div>
           </div>
         </div>
-        <div className="mt-10 pt-6 border-t border-border text-center text-xs text-muted-foreground">
-          © {new Date().getFullYear()} AURA FEMENINA. Todos los derechos reservados.
+        <div className="mt-10 pt-6 border-t border-border text-center text-xs text-muted-foreground space-y-1">
+          <p>© {new Date().getFullYear()} AURA FEMENINA. Todos los derechos reservados.</p>
+          <a href={c.instagram_url} target="_blank" rel="noopener noreferrer" className="inline-block hover:text-foreground transition-colors">
+            Edit by aurafemenina ✨
+          </a>
         </div>
       </div>
     </footer>
