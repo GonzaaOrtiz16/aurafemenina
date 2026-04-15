@@ -84,6 +84,13 @@ export default function AdminConfig() {
     });
   };
 
+  const saveShipping = () => {
+    update.mutate({ key: "shipping_rates", value: shipping }, {
+      onSuccess: () => toast({ title: "Tarifas de envío actualizadas" }),
+      onError: () => toast({ title: "Error", variant: "destructive" }),
+    });
+  };
+
   const addStep = () => setSteps([...steps, { title: "", description: "" }]);
   const removeStep = (idx: number) => setSteps(steps.filter((_, i) => i !== idx));
   const updateStep = (idx: number, field: keyof Step, value: string) => {
