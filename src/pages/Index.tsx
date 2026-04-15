@@ -20,10 +20,10 @@ export default function Index() {
       <StoreInfo />
 
       {/* Featured Products */}
-      <section className="container py-20 md:py-32 px-6 md:px-12">
+      <section className="container py-20 md:py-32 px-6 md:px-12 content-visibility-auto">
         <div
           ref={titleRef}
-          className={`text-center transition-all duration-700 ${
+          className={`text-center transition-[opacity,transform] duration-700 will-change-[opacity,transform] ${
             titleVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"
           }`}
         >
@@ -61,10 +61,10 @@ export default function Index() {
       </section>
 
       {/* Encargues Section */}
-      <section className="bg-secondary/30 py-20 md:py-32 overflow-hidden">
+      <section className="bg-secondary/30 py-20 md:py-32 overflow-hidden content-visibility-auto">
         <div
           ref={encRef}
-          className={`container px-6 md:px-12 flex flex-col md:flex-row items-center gap-12 md:gap-20 transition-all duration-1000 ${
+          className={`container px-6 md:px-12 flex flex-col md:flex-row items-center gap-12 md:gap-20 transition-[opacity,transform] duration-1000 will-change-[opacity,transform] ${
             encVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-12"
           }`}
         >
