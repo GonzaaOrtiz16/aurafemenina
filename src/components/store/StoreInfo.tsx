@@ -48,7 +48,7 @@ function BenefitsCarousel({ whatsapp }: { whatsapp: string }) {
 function AnimatedCard({ icon: Icon, title, subtitle, delay }: { icon: typeof Truck; title: string; subtitle: string; delay: number }) {
   const { ref, isVisible } = useScrollAnimation(0.2);
   return (
-    <div ref={ref} className={`flex flex-col items-center text-center gap-3 transition-all duration-700 ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
+    <div ref={ref} className={`flex flex-col items-center text-center gap-3 transition-[opacity,transform] duration-700 will-change-[opacity,transform] ${isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}
       style={{ transitionDelay: `${delay}ms` }}>
       <div className="w-16 h-16 rounded-full border border-border flex items-center justify-center">
         <Icon className="w-7 h-7 text-foreground stroke-[1.2px]" />
@@ -80,7 +80,7 @@ export default function StoreInfo() {
       </div>
 
       <div className="bg-secondary py-12 md:py-16">
-        <div ref={igRef} className={`container mx-auto px-6 flex justify-center transition-all duration-700 ${igVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
+        <div ref={igRef} className={`container mx-auto px-6 flex justify-center transition-[opacity,transform] duration-700 will-change-[opacity,transform] ${igVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}>
           <a href={c.instagram_url} target="_blank"
             className="flex items-center gap-4 md:gap-6 group transition-all hover:opacity-80 hover:scale-[1.02] duration-500">
             <Instagram className="w-12 h-12 md:w-16 md:h-16 text-foreground group-hover:text-accent transition-colors duration-500" />
