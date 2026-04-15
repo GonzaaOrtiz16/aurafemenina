@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { calcularEnvio, formatPrice, getShippingZone, MINIMUM_PURCHASE, ZONE_LABELS } from "@/lib/shipping";
+import { getShippingZone, formatPrice, ZONE_LABELS } from "@/lib/shipping";
 import type { ShippingResult, ShippingZone } from "@/types/product";
+import { useShippingRates } from "@/hooks/useShippingRates";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Truck, AlertTriangle, CheckCircle } from "lucide-react";
@@ -16,6 +17,14 @@ export default function ShippingCalculator({ onShippingCalculated, onZoneDetecte
   const [result, setResult] = useState<ShippingResult | null>(null);
   const [zone, setZone] = useState<ShippingZone | null>(null);
   const [error, setError] = useState("");
+  const { rates } = useShippingRates();
+
+  const ZONE_METHODS: Record<ShippingZone, { method: string; days: string }> = {
+    caba: { method: "Correo Argentino - Envío a CABA", days: "2 a 4 días hábiles" },
+    zona_sur: { method: "Correo Argentino - Envío Zona Sur", days: "2 a 4 días hábiles" },
+    gba: { method: "Correo Argentino - Envío a GBA", days: "3 a 5 días hábiles" },
+    interior: { method: "Correo Argentino - Envío al Interior", days: "5 a 8 días hábiles" },
+  };
 
   const handleCalculate = () => {
     setError("");
@@ -23,18 +32,23 @@ export default function ShippingCalculator({ onShippingCalculated, onZoneDetecte
     setZone(detectedZone);
     onZoneDetected?.(detectedZone);
 
-    const r = calcularEnvio(cp);
-    if (!r || !detectedZone) {
+    if (!detectedZone) {
       setError("Ingresá un código postal válido (4 dígitos).");
       setResult(null);
       onShippingCalculated?.(null);
       return;
     }
+
+    const r: ShippingResult = {
+      cost: rates[detectedZone],
+      method: ZONE_METHODS[detectedZone].method,
+      estimatedDays: ZONE_METHODS[detectedZone].days,
+    };
     setResult(r);
     onShippingCalculated?.(r);
   };
 
-  const minimum = zone ? MINIMUM_PURCHASE[zone] : 0;
+  const minimum = zone ? rates.minimums[zone] : 0;
   const meetsMinimum = minimum === 0 || cartSubtotal >= minimum;
 
   return (

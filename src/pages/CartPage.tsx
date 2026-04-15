@@ -3,7 +3,8 @@ import { Link } from "react-router-dom";
 import Layout from "@/components/store/Layout";
 import ShippingCalculator from "@/components/store/ShippingCalculator";
 import { useCart } from "@/context/CartContext";
-import { formatPrice, MINIMUM_PURCHASE, ZONE_LABELS } from "@/lib/shipping";
+import { formatPrice, ZONE_LABELS } from "@/lib/shipping";
+import { useShippingRates } from "@/hooks/useShippingRates";
 import type { ShippingResult, ShippingZone, DeliveryMethod } from "@/types/product";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,12 +26,13 @@ export default function CartPage() {
   const [zone, setZone] = useState<ShippingZone | null>(null);
   const [address, setAddress] = useState("");
   const { data: contact } = useSiteSetting<ContactData>("contact");
+  const { rates } = useShippingRates();
   const whatsappNumber = contact?.whatsapp || "5491134944228";
 
   const isPickup = deliveryMethod === "pickup";
   const shippingCost = isPickup ? 0 : (shipping?.cost || 0);
   const total = subtotal + shippingCost;
-  const minimum = zone && !isPickup ? MINIMUM_PURCHASE[zone] : 0;
+  const minimum = zone && !isPickup ? rates.minimums[zone] : 0;
   const meetsMinimum = minimum === 0 || subtotal >= minimum;
 
   const buildWhatsAppMessage = () => {

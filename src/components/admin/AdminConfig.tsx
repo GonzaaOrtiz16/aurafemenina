@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save, Plus, Trash2, Truck, ExternalLink } from "lucide-react";
 
 interface ContactData {
   whatsapp: string;
@@ -27,10 +27,24 @@ interface Step {
   description: string;
 }
 
+interface ShippingRates {
+  caba: number;
+  zona_sur: number;
+  gba: number;
+  interior: number;
+  minimums: {
+    caba: number;
+    zona_sur: number;
+    gba: number;
+    interior: number;
+  };
+}
+
 export default function AdminConfig() {
   const { data: contactData, isLoading: l1 } = useSiteSetting<ContactData>("contact");
   const { data: annData, isLoading: l2 } = useSiteSetting<AnnouncementData>("announcement");
   const { data: stepsData, isLoading: l3 } = useSiteSetting<Step[]>("how_to_buy");
+  const { data: shippingData, isLoading: l4 } = useSiteSetting<ShippingRates>("shipping_rates");
   const update = useUpdateSiteSetting();
   const { toast } = useToast();
 
@@ -39,10 +53,15 @@ export default function AdminConfig() {
   });
   const [announcement, setAnnouncement] = useState<AnnouncementData>({ text: "", enabled: true });
   const [steps, setSteps] = useState<Step[]>([]);
+  const [shipping, setShipping] = useState<ShippingRates>({
+    caba: 2500, zona_sur: 2500, gba: 3800, interior: 5500,
+    minimums: { caba: 0, zona_sur: 0, gba: 100000, interior: 100000 },
+  });
 
   useEffect(() => { if (contactData) setContact(contactData); }, [contactData]);
   useEffect(() => { if (annData) setAnnouncement(annData); }, [annData]);
   useEffect(() => { if (stepsData) setSteps(stepsData); }, [stepsData]);
+  useEffect(() => { if (shippingData) setShipping(shippingData); }, [shippingData]);
 
   const saveContact = () => {
     update.mutate({ key: "contact", value: contact }, {
@@ -65,6 +84,13 @@ export default function AdminConfig() {
     });
   };
 
+  const saveShipping = () => {
+    update.mutate({ key: "shipping_rates", value: shipping }, {
+      onSuccess: () => toast({ title: "Tarifas de envío actualizadas" }),
+      onError: () => toast({ title: "Error", variant: "destructive" }),
+    });
+  };
+
   const addStep = () => setSteps([...steps, { title: "", description: "" }]);
   const removeStep = (idx: number) => setSteps(steps.filter((_, i) => i !== idx));
   const updateStep = (idx: number, field: keyof Step, value: string) => {
@@ -73,10 +99,63 @@ export default function AdminConfig() {
     setSteps(updated);
   };
 
-  if (l1 || l2 || l3) return <p className="text-sm text-muted-foreground">Cargando...</p>;
+  if (l1 || l2 || l3 || l4) return <p className="text-sm text-muted-foreground">Cargando...</p>;
 
   return (
     <div className="max-w-2xl space-y-10">
+      {/* Shipping Rates */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-display text-2xl font-semibold flex items-center gap-2"><Truck className="h-6 w-6" /> Tarifas de Envío</h2>
+          <a href="https://www.correoargentino.com.ar/MiCorreo/public/calculadoraDePreciosYPlazos" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="gap-2 text-xs"><ExternalLink className="h-4 w-4" /> Consultar tarifas en Correo Argentino</Button>
+          </a>
+        </div>
+        <div className="space-y-4 border border-border rounded-md p-4 bg-card">
+          <p className="text-xs text-muted-foreground">Consultá las tarifas actualizadas en la calculadora de Correo Argentino y actualizalas acá.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">CABA ($)</label>
+              <Input type="number" value={shipping.caba} onChange={(e) => setShipping({ ...shipping, caba: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Zona Sur GBA ($)</label>
+              <Input type="number" value={shipping.zona_sur} onChange={(e) => setShipping({ ...shipping, zona_sur: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">GBA ($)</label>
+              <Input type="number" value={shipping.gba} onChange={(e) => setShipping({ ...shipping, gba: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Interior ($)</label>
+              <Input type="number" value={shipping.interior} onChange={(e) => setShipping({ ...shipping, interior: Number(e.target.value) })} />
+            </div>
+          </div>
+          <h3 className="text-sm font-semibold mt-4">Mínimos de compra por zona</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo CABA ($)</label>
+              <Input type="number" value={shipping.minimums.caba} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, caba: Number(e.target.value) } })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo Zona Sur ($)</label>
+              <Input type="number" value={shipping.minimums.zona_sur} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, zona_sur: Number(e.target.value) } })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo GBA ($)</label>
+              <Input type="number" value={shipping.minimums.gba} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, gba: Number(e.target.value) } })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo Interior ($)</label>
+              <Input type="number" value={shipping.minimums.interior} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, interior: Number(e.target.value) } })} />
+            </div>
+          </div>
+          <Button onClick={saveShipping} disabled={update.isPending} className="bg-foreground text-background hover:bg-foreground/90 gap-2">
+            <Save className="h-4 w-4" /> Guardar tarifas
+          </Button>
+        </div>
+      </div>
+
       {/* Announcement Bar */}
       <div>
         <h2 className="font-display text-2xl font-semibold mb-6">Barra de Anuncios</h2>
