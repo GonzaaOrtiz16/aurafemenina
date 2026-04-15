@@ -103,6 +103,59 @@ export default function AdminConfig() {
 
   return (
     <div className="max-w-2xl space-y-10">
+      {/* Shipping Rates */}
+      <div>
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-display text-2xl font-semibold flex items-center gap-2"><Truck className="h-6 w-6" /> Tarifas de Envío</h2>
+          <a href="https://www.correoargentino.com.ar/MiCorreo/public/calculadoraDePreciosYPlazos" target="_blank" rel="noopener noreferrer">
+            <Button variant="outline" className="gap-2 text-xs"><ExternalLink className="h-4 w-4" /> Consultar tarifas en Correo Argentino</Button>
+          </a>
+        </div>
+        <div className="space-y-4 border border-border rounded-md p-4 bg-card">
+          <p className="text-xs text-muted-foreground">Consultá las tarifas actualizadas en la calculadora de Correo Argentino y actualizalas acá.</p>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">CABA ($)</label>
+              <Input type="number" value={shipping.caba} onChange={(e) => setShipping({ ...shipping, caba: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Zona Sur GBA ($)</label>
+              <Input type="number" value={shipping.zona_sur} onChange={(e) => setShipping({ ...shipping, zona_sur: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">GBA ($)</label>
+              <Input type="number" value={shipping.gba} onChange={(e) => setShipping({ ...shipping, gba: Number(e.target.value) })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Interior ($)</label>
+              <Input type="number" value={shipping.interior} onChange={(e) => setShipping({ ...shipping, interior: Number(e.target.value) })} />
+            </div>
+          </div>
+          <h3 className="text-sm font-semibold mt-4">Mínimos de compra por zona</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo CABA ($)</label>
+              <Input type="number" value={shipping.minimums.caba} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, caba: Number(e.target.value) } })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo Zona Sur ($)</label>
+              <Input type="number" value={shipping.minimums.zona_sur} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, zona_sur: Number(e.target.value) } })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo GBA ($)</label>
+              <Input type="number" value={shipping.minimums.gba} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, gba: Number(e.target.value) } })} />
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Mínimo Interior ($)</label>
+              <Input type="number" value={shipping.minimums.interior} onChange={(e) => setShipping({ ...shipping, minimums: { ...shipping.minimums, interior: Number(e.target.value) } })} />
+            </div>
+          </div>
+          <Button onClick={saveShipping} disabled={update.isPending} className="bg-foreground text-background hover:bg-foreground/90 gap-2">
+            <Save className="h-4 w-4" /> Guardar tarifas
+          </Button>
+        </div>
+      </div>
+
       {/* Announcement Bar */}
       <div>
         <h2 className="font-display text-2xl font-semibold mb-6">Barra de Anuncios</h2>
