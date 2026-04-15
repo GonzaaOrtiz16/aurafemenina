@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Plus, Trash2 } from "lucide-react";
+import { Save, Plus, Trash2, Truck, ExternalLink } from "lucide-react";
 
 interface ContactData {
   whatsapp: string;
@@ -25,6 +25,19 @@ interface AnnouncementData {
 interface Step {
   title: string;
   description: string;
+}
+
+interface ShippingRates {
+  caba: number;
+  zona_sur: number;
+  gba: number;
+  interior: number;
+  minimums: {
+    caba: number;
+    zona_sur: number;
+    gba: number;
+    interior: number;
+  };
 }
 
 export default function AdminConfig() {
