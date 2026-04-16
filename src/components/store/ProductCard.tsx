@@ -1,4 +1,4 @@
-import { memo, useState } from "react";
+import { memo, useState, useCallback } from "react";
 import { Link } from "react-router-dom";
 import { Product } from "@/types/product";
 import { formatPrice } from "@/lib/shipping";
@@ -10,6 +10,8 @@ interface ProductCardProps {
 
 function ProductCard({ product }: ProductCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
+  const [hovered, setHovered] = useState(false);
+  const onLoad = useCallback(() => setImgLoaded(true), []);
 
   return (
     <div className={`transition-opacity duration-500 ${imgLoaded ? "opacity-100" : "opacity-0"}`}>
@@ -18,6 +20,7 @@ function ProductCard({ product }: ProductCardProps) {
         className="group block"
         data-track-key={`producto:${product.name}`}
         data-product-id={product.id}
+        onMouseEnter={() => setHovered(true)}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary rounded-sm">
           <img
@@ -26,21 +29,17 @@ function ProductCard({ product }: ProductCardProps) {
             className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.03]"
             loading="lazy"
             decoding="async"
-            onLoad={() => setImgLoaded(true)}
+            onLoad={onLoad}
           />
-          {product.images[1] && (
+          {/* Only mount hover image after first hover to save bandwidth */}
+          {hovered && product.images[1] && (
             <img
               src={product.images[1]}
-              alt={product.name}
+              alt=""
               className="absolute inset-0 h-full w-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out"
-              loading="lazy"
+              loading="eager"
               decoding="async"
             />
-          )}
-          {product.isNew && (
-            <Badge className="absolute top-4 left-4 bg-accent text-accent-foreground font-body text-[9px] uppercase tracking-[0.15em] rounded-none px-3 py-1">
-              Nuevo
-            </Badge>
           )}
           {product.originalPrice && (
             <Badge className="absolute top-4 right-4 bg-foreground text-background font-body text-[9px] uppercase tracking-[0.15em] rounded-none px-3 py-1">
