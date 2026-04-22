@@ -48,16 +48,15 @@ export default function AdminBalance() {
         { header: "Ganancia Real ($)", key: "real_profit", width: 20 },
       ];
 
+      const sumValues = (obj: any): number =>
+        Object.values(obj || {}).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+
       const calcStock = (p: any): number => {
         const colores = (p.colores as any[]) || [];
         if (colores.length > 0) {
-          return colores.reduce((sum, c) => {
-            const sizes = c.sizes || {};
-            return sum + Object.values(sizes).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
-          }, 0);
+          return colores.reduce((sum: number, c: any) => sum + sumValues(c.sizes), 0);
         }
-        const sizes = p.sizes || {};
-        return Object.values(sizes).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+        return sumValues(p.sizes);
       };
 
       (products || []).forEach((p: any, idx: number) => {
