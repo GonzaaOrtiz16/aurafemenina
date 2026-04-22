@@ -49,7 +49,7 @@ export default function AdminBalance() {
       ];
 
       const sumValues = (obj: any): number =>
-        Object.values(obj || {}).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
+        (Object.values(obj || {}) as any[]).reduce((s: number, v: any) => s + (Number(v) || 0), 0);
 
       const calcStock = (p: any): number => {
         const colores = (p.colores as any[]) || [];
