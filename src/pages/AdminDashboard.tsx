@@ -87,6 +87,7 @@ export default function AdminDashboard() {
         {activeTab === "hero" && <AdminHero />}
         {activeTab === "faqs" && <AdminFAQs />}
         {activeTab === "config" && <AdminConfig />}
+        {activeTab === "balance" && <AdminBalance />}
         {activeTab === "ai" && <AdminAI onNavigateTab={setActiveTab} />}
       </div>
     </div>
