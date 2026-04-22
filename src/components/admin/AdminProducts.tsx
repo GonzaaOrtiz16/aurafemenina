@@ -64,7 +64,7 @@ export default function AdminProducts() {
   const [subcatParentId, setSubcatParentId] = useState("");
 
   const [form, setForm] = useState({
-    name: "", slug: "", description: "", price: "", original_price: "",
+    name: "", slug: "", description: "", price: "", original_price: "", cost: "",
     category_id: "", subcategory_id: "", featured: false, images: [] as string[],
     colores: [] as ColorVariant[],
   });
@@ -89,7 +89,7 @@ export default function AdminProducts() {
 
   const openNew = () => {
     setEditing(null);
-    setForm({ name: "", slug: "", description: "", price: "", original_price: "", category_id: "", subcategory_id: "", featured: false, images: [], colores: [] });
+    setForm({ name: "", slug: "", description: "", price: "", original_price: "", cost: "", category_id: "", subcategory_id: "", featured: false, images: [], colores: [] });
     setDialogOpen(true);
   };
 
@@ -103,6 +103,7 @@ export default function AdminProducts() {
     setForm({
       name: p.name, slug: p.slug, description: p.description || "",
       price: String(p.price), original_price: p.original_price ? String(p.original_price) : "",
+      cost: (p as any).cost ? String((p as any).cost) : "",
       category_id: p.category_id || "", subcategory_id: p.subcategory_id || "", featured: p.featured,
       images: p.images || [], colores: migratedColores,
     });
@@ -198,6 +199,7 @@ export default function AdminProducts() {
       name: form.name, slug, description: form.description || null,
       price: Number(form.price),
       original_price: form.original_price ? Number(form.original_price) : null,
+      cost: form.cost ? Number(form.cost) : 0,
       category_id: form.category_id || null,
       subcategory_id: form.subcategory_id || null,
       featured: form.featured,
@@ -405,6 +407,11 @@ export default function AdminProducts() {
                   <Input type="number" placeholder="Dejá vacío si no hay oferta" value={form.original_price} onChange={(e) => setForm({ ...form, original_price: e.target.value })} />
                   <p className="text-[10px] text-muted-foreground mt-1">Si ponés un precio original, se muestra tachado como oferta</p>
                 </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1 block">Costo unitario</label>
+                <Input type="number" placeholder="Lo que te sale a vos cada unidad" value={form.cost} onChange={(e) => setForm({ ...form, cost: e.target.value })} />
+                <p className="text-[10px] text-muted-foreground mt-1">Se usa para calcular ganancia y márgenes en Balance</p>
               </div>
               <div>
                 <label className="text-sm font-medium mb-1 block">Categoría</label>
