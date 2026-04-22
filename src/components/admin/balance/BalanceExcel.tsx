@@ -4,7 +4,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Download, FileSpreadsheet, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 
-export default function AdminBalance() {
+export default function BalanceExcel() {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
 
