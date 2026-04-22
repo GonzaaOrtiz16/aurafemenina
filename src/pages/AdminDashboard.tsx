@@ -2,13 +2,14 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { LogOut, Package, ShoppingBag, Image, HelpCircle, Settings, Bot } from "lucide-react";
+import { LogOut, Package, ShoppingBag, Image, HelpCircle, Settings, Bot, FileSpreadsheet } from "lucide-react";
 import AdminProducts from "@/components/admin/AdminProducts";
 import AdminEncargues from "@/components/admin/AdminEncargues";
 import AdminHero from "@/components/admin/AdminHero";
 import AdminFAQs from "@/components/admin/AdminFAQs";
 import AdminConfig from "@/components/admin/AdminConfig";
 import AdminAI from "@/components/admin/AdminAI";
+import AdminBalance from "@/components/admin/AdminBalance";
 
 const TABS = [
   { id: "products", label: "Productos", icon: Package },
@@ -16,6 +17,7 @@ const TABS = [
   { id: "hero", label: "Portada", icon: Image },
   { id: "faqs", label: "FAQs", icon: HelpCircle },
   { id: "config", label: "Configuración", icon: Settings },
+  { id: "balance", label: "Balance", icon: FileSpreadsheet },
   { id: "ai", label: "IA Admin", icon: Bot },
 ] as const;
 
