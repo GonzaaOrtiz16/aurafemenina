@@ -129,6 +129,7 @@ export type Database = {
         Row: {
           category_id: string | null
           colores: Json | null
+          cost: number
           created_at: string
           description: string | null
           estimated_days: string | null
@@ -145,6 +146,7 @@ export type Database = {
         Insert: {
           category_id?: string | null
           colores?: Json | null
+          cost?: number
           created_at?: string
           description?: string | null
           estimated_days?: string | null
@@ -161,6 +163,7 @@ export type Database = {
         Update: {
           category_id?: string | null
           colores?: Json | null
+          cost?: number
           created_at?: string
           description?: string | null
           estimated_days?: string | null
@@ -244,10 +247,103 @@ export type Database = {
           },
         ]
       }
+      expenses: {
+        Row: {
+          amount: number
+          category: string
+          created_at: string
+          description: string
+          expense_date: string
+          id: string
+          notes: string | null
+          payment_method: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          category?: string
+          created_at?: string
+          description?: string
+          expense_date?: string
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      fiados: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_name: string
+          customer_phone: string | null
+          description: string
+          due_date: string | null
+          id: string
+          notes: string | null
+          paid_at: string | null
+          sale_date: string
+          sale_id: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          customer_name: string
+          customer_phone?: string | null
+          description: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          sale_date?: string
+          sale_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_name?: string
+          customer_phone?: string | null
+          description?: string
+          due_date?: string | null
+          id?: string
+          notes?: string | null
+          paid_at?: string | null
+          sale_date?: string
+          sale_id?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fiados_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           category_id: string | null
           colores: Json | null
+          cost: number
           created_at: string
           description: string | null
           featured: boolean
@@ -264,6 +360,7 @@ export type Database = {
         Insert: {
           category_id?: string | null
           colores?: Json | null
+          cost?: number
           created_at?: string
           description?: string | null
           featured?: boolean
@@ -280,6 +377,7 @@ export type Database = {
         Update: {
           category_id?: string | null
           colores?: Json | null
+          cost?: number
           created_at?: string
           description?: string | null
           featured?: boolean
@@ -331,6 +429,101 @@ export type Database = {
           id?: string
           newsletter_opt_in?: boolean
           phone?: string
+        }
+        Relationships: []
+      }
+      sale_items: {
+        Row: {
+          color: string | null
+          created_at: string
+          id: string
+          product_id: string | null
+          product_name: string
+          quantity: number
+          sale_id: string
+          size: string | null
+          unit_cost: number
+          unit_price: number
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name: string
+          quantity?: number
+          sale_id: string
+          size?: string | null
+          unit_cost?: number
+          unit_price?: number
+        }
+        Update: {
+          color?: string | null
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          product_name?: string
+          quantity?: number
+          sale_id?: string
+          size?: string | null
+          unit_cost?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sale_items_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          channel: string
+          created_at: string
+          customer_name: string | null
+          customer_phone: string | null
+          discount: number
+          id: string
+          notes: string | null
+          payment_method: string
+          sale_date: string
+          subtotal: number
+          total: number
+          total_cost: number
+          updated_at: string
+        }
+        Insert: {
+          channel?: string
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          sale_date?: string
+          subtotal?: number
+          total?: number
+          total_cost?: number
+          updated_at?: string
+        }
+        Update: {
+          channel?: string
+          created_at?: string
+          customer_name?: string | null
+          customer_phone?: string | null
+          discount?: number
+          id?: string
+          notes?: string | null
+          payment_method?: string
+          sale_date?: string
+          subtotal?: number
+          total?: number
+          total_cost?: number
+          updated_at?: string
         }
         Relationships: []
       }
