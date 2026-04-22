@@ -10,8 +10,24 @@ import { useToast } from "@/hooks/use-toast";
 import { Plus, Trash2, Search, X } from "lucide-react";
 import { formatPrice } from "@/lib/utils";
 
-interface Product { id: string; name: string; price: number; cost: number; }
-interface SaleItem { product_id: string | null; product_name: string; quantity: number; unit_price: number; unit_cost: number; }
+interface ColorVariant { nombre: string; hex?: string; sizes?: Record<string, number>; }
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  cost: number;
+  sizes: Record<string, number> | null;
+  colores: ColorVariant[] | null;
+}
+interface SaleItem {
+  product_id: string | null;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  unit_cost: number;
+  size: string | null;
+  color: string | null;
+}
 interface Sale {
   id: string;
   sale_date: string;
@@ -19,7 +35,7 @@ interface Sale {
   payment_method: string;
   total: number;
   total_cost: number;
-  sale_items: { product_name: string; quantity: number }[];
+  sale_items: { product_name: string; quantity: number; size: string | null; color: string | null }[];
 }
 
 export default function SalesManager() {
@@ -42,8 +58,8 @@ export default function SalesManager() {
   const load = async () => {
     setLoading(true);
     const [{ data: s }, { data: p }] = await Promise.all([
-      supabase.from("sales").select("id, sale_date, customer_name, payment_method, total, total_cost, sale_items(product_name, quantity)").order("sale_date", { ascending: false }).limit(100),
-      supabase.from("products").select("id, name, price, cost").order("name"),
+      supabase.from("sales").select("id, sale_date, customer_name, payment_method, total, total_cost, sale_items(product_name, quantity, size, color)").order("sale_date", { ascending: false }).limit(100),
+      supabase.from("products").select("id, name, price, cost, sizes, colores").order("name"),
     ]);
     setSales((s as any) || []);
     setProducts((p as any) || []);
@@ -56,16 +72,23 @@ export default function SalesManager() {
   };
 
   const addProduct = (p: Product) => {
-    setItems((prev) => {
-      const existing = prev.find((i) => i.product_id === p.id);
-      if (existing) return prev.map((i) => i.product_id === p.id ? { ...i, quantity: i.quantity + 1 } : i);
-      return [...prev, { product_id: p.id, product_name: p.name, quantity: 1, unit_price: Number(p.price), unit_cost: Number(p.cost || 0) }];
-    });
+    setItems((prev) => [
+      ...prev,
+      {
+        product_id: p.id,
+        product_name: p.name,
+        quantity: 1,
+        unit_price: Number(p.price),
+        unit_cost: Number(p.cost || 0),
+        size: null,
+        color: null,
+      },
+    ]);
     setSearch("");
   };
 
   const addManualItem = () => {
-    setItems((prev) => [...prev, { product_id: null, product_name: "", quantity: 1, unit_price: 0, unit_cost: 0 }]);
+    setItems((prev) => [...prev, { product_id: null, product_name: "", quantity: 1, unit_price: 0, unit_cost: 0, size: null, color: null }]);
   };
 
   const updateItem = (idx: number, patch: Partial<SaleItem>) => {
@@ -74,6 +97,39 @@ export default function SalesManager() {
 
   const removeItem = (idx: number) => {
     setItems((prev) => prev.filter((_, n) => n !== idx));
+  };
+
+  // Helpers para variantes del producto en el item
+  const getProduct = (id: string | null) => products.find((p) => p.id === id);
+
+  const getColorsForItem = (it: SaleItem): ColorVariant[] => {
+    const p = getProduct(it.product_id);
+    if (!p) return [];
+    return (p.colores || []).filter((c) => c && c.nombre);
+  };
+
+  const getSizesForItem = (it: SaleItem): { size: string; stock: number }[] => {
+    const p = getProduct(it.product_id);
+    if (!p) return [];
+    const colores = p.colores || [];
+    const hasVariants = colores.length > 0 && colores.some((c) => c.sizes && Object.keys(c.sizes).length > 0);
+    if (hasVariants) {
+      if (it.color) {
+        const c = colores.find((c) => c.nombre === it.color);
+        const sizes = c?.sizes || {};
+        return Object.entries(sizes).map(([size, stock]) => ({ size, stock: Number(stock) }));
+      }
+      // sin color elegido → unificar talles sumando stock
+      const acc: Record<string, number> = {};
+      colores.forEach((c) => {
+        Object.entries(c.sizes || {}).forEach(([s, st]) => {
+          acc[s] = (acc[s] || 0) + Number(st);
+        });
+      });
+      return Object.entries(acc).map(([size, stock]) => ({ size, stock }));
+    }
+    const sizes = p.sizes || {};
+    return Object.entries(sizes).map(([size, stock]) => ({ size, stock: Number(stock) }));
   };
 
   const subtotal = items.reduce((s, i) => s + i.unit_price * i.quantity, 0);
@@ -86,6 +142,7 @@ export default function SalesManager() {
       toast({ title: "Agregá al menos un producto", variant: "destructive" });
       return;
     }
+
     const { data: sale, error } = await supabase.from("sales").insert({
       customer_name: customerName || null,
       customer_phone: customerPhone || null,
@@ -100,21 +157,74 @@ export default function SalesManager() {
       return;
     }
 
-    const itemsPayload = items.map((i) => ({ ...i, sale_id: sale.id }));
+    const itemsPayload = items.map((i) => ({
+      sale_id: sale.id,
+      product_id: i.product_id,
+      product_name: i.product_name,
+      quantity: i.quantity,
+      unit_price: i.unit_price,
+      unit_cost: i.unit_cost,
+      size: i.size,
+      color: i.color,
+    }));
     const { error: e2 } = await supabase.from("sale_items").insert(itemsPayload);
     if (e2) {
       toast({ title: "Error al guardar items", description: e2.message, variant: "destructive" });
       return;
     }
 
-    toast({ title: "Venta registrada", description: `Total: ${formatPrice(total)} · Ganancia: ${formatPrice(profit)}` });
+    // Descontar stock de productos vinculados
+    const stockErrors: string[] = [];
+    for (const it of items) {
+      if (!it.product_id || !it.size) continue;
+      const p = getProduct(it.product_id);
+      if (!p) continue;
+
+      const colores = (p.colores || []).map((c) => ({ ...c, sizes: { ...(c.sizes || {}) } }));
+      const hasVariants = colores.length > 0 && colores.some((c) => c.sizes && Object.keys(c.sizes).length > 0);
+
+      if (hasVariants) {
+        if (!it.color) {
+          stockErrors.push(`${p.name}: falta color para descontar stock`);
+          continue;
+        }
+        const c = colores.find((c) => c.nombre === it.color);
+        if (!c || !c.sizes || c.sizes[it.size] == null) {
+          stockErrors.push(`${p.name}: ${it.color}/${it.size} no existe`);
+          continue;
+        }
+        c.sizes[it.size] = Math.max(0, Number(c.sizes[it.size]) - it.quantity);
+        const { error: upErr } = await supabase.from("products").update({ colores: colores as any }).eq("id", p.id);
+        if (upErr) stockErrors.push(`${p.name}: ${upErr.message}`);
+      } else {
+        const sizes = { ...(p.sizes || {}) };
+        if (sizes[it.size] == null) {
+          stockErrors.push(`${p.name}: talle ${it.size} no existe`);
+          continue;
+        }
+        sizes[it.size] = Math.max(0, Number(sizes[it.size]) - it.quantity);
+        const { error: upErr } = await supabase.from("products").update({ sizes: sizes as any }).eq("id", p.id);
+        if (upErr) stockErrors.push(`${p.name}: ${upErr.message}`);
+      }
+    }
+
+    if (stockErrors.length > 0) {
+      toast({
+        title: "Venta registrada con avisos de stock",
+        description: stockErrors.join(" · "),
+        variant: "destructive",
+      });
+    } else {
+      toast({ title: "Venta registrada", description: `Total: ${formatPrice(total)} · Ganancia: ${formatPrice(profit)}` });
+    }
+
     setOpen(false);
     resetForm();
     load();
   };
 
   const remove = async (id: string) => {
-    if (!confirm("¿Eliminar esta venta?")) return;
+    if (!confirm("¿Eliminar esta venta? (no repone el stock)")) return;
     const { error } = await supabase.from("sales").delete().eq("id", id);
     if (error) { toast({ title: "Error", description: error.message, variant: "destructive" }); return; }
     toast({ title: "Venta eliminada" });
@@ -133,7 +243,7 @@ export default function SalesManager() {
           <DialogTrigger asChild>
             <Button size="sm" className="gap-2"><Plus className="h-4 w-4" />Nueva venta</Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
             <DialogHeader><DialogTitle>Registrar venta manual</DialogTitle></DialogHeader>
             <div className="space-y-4 py-2">
               <div className="grid grid-cols-2 gap-3">
@@ -162,30 +272,80 @@ export default function SalesManager() {
 
               {items.length > 0 && (
                 <div className="border border-border rounded-md divide-y divide-border">
-                  {items.map((it, idx) => (
-                    <div key={idx} className="p-3 grid grid-cols-12 gap-2 items-end">
-                      <div className="col-span-12 md:col-span-4">
-                        <Label className="text-xs">Producto</Label>
-                        <Input value={it.product_name} onChange={(e) => updateItem(idx, { product_name: e.target.value })} />
+                  {items.map((it, idx) => {
+                    const colors = getColorsForItem(it);
+                    const sizes = getSizesForItem(it);
+                    const hasColors = colors.length > 0;
+                    const hasSizes = sizes.length > 0;
+                    return (
+                      <div key={idx} className="p-3 space-y-2">
+                        <div className="grid grid-cols-12 gap-2 items-end">
+                          <div className="col-span-12 md:col-span-5">
+                            <Label className="text-xs">Producto</Label>
+                            <Input value={it.product_name} onChange={(e) => updateItem(idx, { product_name: e.target.value })} />
+                          </div>
+                          <div className="col-span-3 md:col-span-2">
+                            <Label className="text-xs">Cant.</Label>
+                            <Input type="number" min={1} value={it.quantity} onChange={(e) => updateItem(idx, { quantity: parseInt(e.target.value) || 1 })} />
+                          </div>
+                          <div className="col-span-4 md:col-span-2">
+                            <Label className="text-xs">Precio</Label>
+                            <Input type="number" min={0} value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.target.value) || 0 })} />
+                          </div>
+                          <div className="col-span-4 md:col-span-2">
+                            <Label className="text-xs">Costo</Label>
+                            <Input type="number" min={0} value={it.unit_cost} onChange={(e) => updateItem(idx, { unit_cost: parseFloat(e.target.value) || 0 })} />
+                          </div>
+                          <div className="col-span-1 md:col-span-1 flex justify-end">
+                            <Button size="icon" variant="ghost" onClick={() => removeItem(idx)}><X className="h-4 w-4" /></Button>
+                          </div>
+                        </div>
+
+                        {(hasColors || hasSizes) && (
+                          <div className="grid grid-cols-12 gap-2">
+                            {hasColors && (
+                              <div className="col-span-6">
+                                <Label className="text-xs">Color</Label>
+                                <Select
+                                  value={it.color || ""}
+                                  onValueChange={(v) => updateItem(idx, { color: v, size: null })}
+                                >
+                                  <SelectTrigger><SelectValue placeholder="Elegí color" /></SelectTrigger>
+                                  <SelectContent>
+                                    {colors.map((c) => (
+                                      <SelectItem key={c.nombre} value={c.nombre}>{c.nombre}</SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                            {hasSizes && (
+                              <div className={hasColors ? "col-span-6" : "col-span-12"}>
+                                <Label className="text-xs">Talle (descuenta stock)</Label>
+                                <Select
+                                  value={it.size || ""}
+                                  onValueChange={(v) => updateItem(idx, { size: v })}
+                                >
+                                  <SelectTrigger><SelectValue placeholder="Elegí talle" /></SelectTrigger>
+                                  <SelectContent>
+                                    {sizes.map((s) => (
+                                      <SelectItem key={s.size} value={s.size} disabled={s.stock <= 0}>
+                                        {s.size} {s.stock <= 0 ? "(sin stock)" : `· stock ${s.stock}`}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
+                          </div>
+                        )}
+
+                        <div className="text-xs text-muted-foreground text-right">
+                          {formatPrice(it.unit_price * it.quantity)}
+                        </div>
                       </div>
-                      <div className="col-span-3 md:col-span-2">
-                        <Label className="text-xs">Cant.</Label>
-                        <Input type="number" min={1} value={it.quantity} onChange={(e) => updateItem(idx, { quantity: parseInt(e.target.value) || 1 })} />
-                      </div>
-                      <div className="col-span-4 md:col-span-2">
-                        <Label className="text-xs">Precio</Label>
-                        <Input type="number" min={0} value={it.unit_price} onChange={(e) => updateItem(idx, { unit_price: parseFloat(e.target.value) || 0 })} />
-                      </div>
-                      <div className="col-span-4 md:col-span-2">
-                        <Label className="text-xs">Costo</Label>
-                        <Input type="number" min={0} value={it.unit_cost} onChange={(e) => updateItem(idx, { unit_cost: parseFloat(e.target.value) || 0 })} />
-                      </div>
-                      <div className="col-span-1 md:col-span-2 flex gap-2 items-center justify-end">
-                        <span className="text-xs text-muted-foreground hidden md:block">{formatPrice(it.unit_price * it.quantity)}</span>
-                        <Button size="icon" variant="ghost" onClick={() => removeItem(idx)}><X className="h-4 w-4" /></Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
 
@@ -218,7 +378,7 @@ export default function SalesManager() {
                 <div className="flex justify-between text-emerald-600"><span>Ganancia estimada</span><span>{formatPrice(profit)}</span></div>
               </div>
 
-              <Button onClick={save} className="w-full">Guardar venta</Button>
+              <Button onClick={save} className="w-full">Guardar venta y descontar stock</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -246,7 +406,12 @@ export default function SalesManager() {
               <tr key={s.id} className="border-t border-border">
                 <td className="p-3 whitespace-nowrap">{new Date(s.sale_date).toLocaleDateString("es-AR")}</td>
                 <td className="p-3">{s.customer_name || "—"}</td>
-                <td className="p-3 text-xs text-muted-foreground">{(s.sale_items || []).map((i) => `${i.quantity}× ${i.product_name}`).join(", ")}</td>
+                <td className="p-3 text-xs text-muted-foreground">
+                  {(s.sale_items || []).map((i) => {
+                    const variant = [i.color, i.size].filter(Boolean).join("/");
+                    return `${i.quantity}× ${i.product_name}${variant ? ` (${variant})` : ""}`;
+                  }).join(", ")}
+                </td>
                 <td className="p-3 capitalize text-xs">{s.payment_method}</td>
                 <td className="p-3 text-right font-medium">{formatPrice(s.total)}</td>
                 <td className="p-3 text-right text-emerald-600">{formatPrice(s.total - s.total_cost)}</td>
