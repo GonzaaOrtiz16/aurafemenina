@@ -286,53 +286,30 @@ export default function BalanceExcel() {
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
-      <div>
-        <h2 className="font-display text-2xl font-semibold tracking-wide">Balance & Reportes</h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Descargá una planilla Excel funcional con todos los productos publicados, fórmulas
-          automáticas de ganancia, márgenes, inventario y ventas.
-        </p>
-      </div>
-
-      <div className="border border-border rounded-lg p-6 bg-card space-y-4">
-        <div className="flex items-start gap-4">
-          <div className="p-3 rounded-lg bg-primary/10">
-            <FileSpreadsheet className="h-8 w-8 text-primary" />
-          </div>
-          <div className="flex-1">
-            <h3 className="font-display text-lg font-semibold">Planilla de Balance</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Incluye 4 hojas: Productos (con fórmulas), Balance general, Resumen por categoría e
-              Instrucciones.
-            </p>
-            <ul className="text-xs text-muted-foreground mt-3 space-y-1 list-disc list-inside">
-              <li>Cargás el <strong>costo</strong> y las <strong>unidades vendidas</strong> en las celdas amarillas.</li>
-              <li>Excel calcula automáticamente ganancia, margen %, inventario, ingresos y ganancia real.</li>
-              <li>Promedios y totales se actualizan solos en la hoja Balance.</li>
-            </ul>
-          </div>
+    <div className="border border-border rounded-lg p-6 bg-card space-y-4 max-w-3xl">
+      <div className="flex items-start gap-4">
+        <div className="p-3 rounded-lg bg-primary/10">
+          <FileSpreadsheet className="h-8 w-8 text-primary" />
         </div>
-
-        <Button
-          onClick={handleDownload}
-          disabled={loading}
-          size="lg"
-          className="w-full sm:w-auto gap-2"
-        >
-          {loading ? (
-            <>
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Generando Excel...
-            </>
-          ) : (
-            <>
-              <Download className="h-4 w-4" />
-              Descargar Excel de Balance
-            </>
-          )}
-        </Button>
+        <div className="flex-1">
+          <h3 className="font-display text-lg font-semibold">Planilla de Balance</h3>
+          <p className="text-sm text-muted-foreground mt-1">
+            Incluye 4 hojas: Productos (con fórmulas), Balance general, Resumen por categoría e Instrucciones.
+          </p>
+          <ul className="text-xs text-muted-foreground mt-3 space-y-1 list-disc list-inside">
+            <li>Cargás el <strong>costo</strong> y las <strong>unidades vendidas</strong> en las celdas amarillas.</li>
+            <li>Excel calcula automáticamente ganancia, margen %, inventario, ingresos y ganancia real.</li>
+          </ul>
+        </div>
       </div>
+
+      <Button onClick={handleDownload} disabled={loading} size="lg" className="w-full sm:w-auto gap-2">
+        {loading ? (
+          <><Loader2 className="h-4 w-4 animate-spin" />Generando Excel...</>
+        ) : (
+          <><Download className="h-4 w-4" />Descargar Excel de Balance</>
+        )}
+      </Button>
     </div>
   );
 }
