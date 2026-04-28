@@ -311,7 +311,7 @@ export default function ProductDetail() {
                 return (
                   <div className="space-y-3">
                     {showUrgency && (
-                      <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-sm animate-pulse">
+                      <div className="w-full bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 text-[11px] font-bold tracking-wide rounded-sm animate-pulse break-words">
                         🔥 ¡No te lo pierdas! Solo quedan {stockSel} en talle {selectedSize}
                       </div>
                     )}
