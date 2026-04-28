@@ -68,9 +68,9 @@ export default function BalanceExcel() {
           category: p.categories?.name || "",
           subcategory: p.subcategories?.name || "",
           price: Number(p.price) || 0,
-          original_price: p.original_price ? Number(p.original_price) : null,
+          cash_price: { formula: `ROUND(E${row}*0.9,0)` },
           stock,
-          cost: null, // editable por el usuario
+          cost: Number(p.cost) || 0, // viene desde la base de datos
           profit_unit: { formula: `E${row}-H${row}` },
           margin: { formula: `IF(E${row}=0,0,(E${row}-H${row})/E${row})` },
           inventory_value: { formula: `E${row}*G${row}` },
