@@ -58,6 +58,17 @@ export default function SalesManager() {
 
   useEffect(() => { load(); }, []);
 
+  // Recalcular precios al cambiar método de pago (efectivo = 10% off sobre precio de lista)
+  useEffect(() => {
+    setItems((prev) => prev.map((it) => ({
+      ...it,
+      unit_price: it.list_price > 0
+        ? (paymentMethod === "efectivo" ? Math.round(it.list_price * 0.9) : Math.round(it.list_price))
+        : it.unit_price,
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod]);
+
   const load = async () => {
     setLoading(true);
     const [{ data: s }, { data: p }] = await Promise.all([
