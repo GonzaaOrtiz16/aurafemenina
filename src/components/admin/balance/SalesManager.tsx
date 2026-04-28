@@ -410,8 +410,14 @@ export default function SalesManager() {
               <div><Label>Notas</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
 
               <div className="bg-muted rounded-md p-3 space-y-1 text-sm">
+                {paymentMethod === "efectivo" && items.some((i) => i.list_price > i.unit_price) && (
+                  <div className="flex justify-between text-emerald-700 text-xs font-semibold pb-1 border-b border-border">
+                    <span>💵 10% efectivo aplicado</span>
+                    <span>-{formatPrice(items.reduce((s, i) => s + (i.list_price - i.unit_price) * i.quantity, 0))}</span>
+                  </div>
+                )}
                 <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
-                <div className="flex justify-between"><span>Descuento</span><span>-{formatPrice(discount)}</span></div>
+                <div className="flex justify-between"><span>Descuento extra</span><span>-{formatPrice(discount)}</span></div>
                 <div className="flex justify-between font-semibold border-t border-border pt-1"><span>Total</span><span>{formatPrice(total)}</span></div>
                 <div className="flex justify-between text-emerald-600"><span>Ganancia estimada</span><span>{formatPrice(profit)}</span></div>
               </div>
