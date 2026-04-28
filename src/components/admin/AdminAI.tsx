@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -168,10 +169,29 @@ export default function AdminAI({ onNavigateTab }: AdminAIProps) {
         },
       ]);
 
+      const acts = data.executedActions || [];
+      if (acts.length > 0) {
+        toast.success(`✅ ${acts.length} acción(es) ejecutada(s)`, {
+          description: acts.join(" · "),
+          duration: 6000,
+        });
+      } else {
+        toast.info("Cerebro respondió sin ejecutar cambios", {
+          description: (data.reply || "").slice(0, 120) || "Revisá la respuesta en el chat.",
+        });
+      }
+
       if (data.openTab && onNavigateTab) onNavigateTab(data.openTab);
 
       queryClient.invalidateQueries({ queryKey: ["admin-ai"] });
       queryClient.invalidateQueries({ queryKey: ["site_settings"] });
+      queryClient.invalidateQueries({ queryKey: ["products"] });
+      queryClient.invalidateQueries({ queryKey: ["custom-products"] });
+    },
+    onError: (err: any) => {
+      toast.error("Error en el Cerebro Admin", {
+        description: err?.message || "No se pudo ejecutar la acción.",
+      });
     },
   });
 
