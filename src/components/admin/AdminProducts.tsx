@@ -399,8 +399,13 @@ export default function AdminProducts() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium mb-1 block">Precio actual</label>
+                  <label className="text-sm font-medium mb-1 block">Precio de lista</label>
                   <Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} />
+                  {form.price && Number(form.price) > 0 && (
+                    <p className="text-[11px] text-emerald-600 mt-1 font-semibold">
+                      💵 Con 10% efectivo: {formatPrice(Math.round(Number(form.price) * 0.9))}
+                    </p>
+                  )}
                 </div>
                 <div>
                   <label className="text-sm font-medium mb-1 block">Precio original (oferta)</label>
