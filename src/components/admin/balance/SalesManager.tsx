@@ -24,7 +24,8 @@ interface SaleItem {
   product_id: string | null;
   product_name: string;
   quantity: number;
-  unit_price: number;
+  list_price: number;   // precio de lista (siempre)
+  unit_price: number;   // precio aplicado (con o sin 10% efectivo)
   unit_cost: number;
   size: string | null;
   color: string | null;
@@ -57,6 +58,17 @@ export default function SalesManager() {
 
   useEffect(() => { load(); }, []);
 
+  // Recalcular precios al cambiar método de pago (efectivo = 10% off sobre precio de lista)
+  useEffect(() => {
+    setItems((prev) => prev.map((it) => ({
+      ...it,
+      unit_price: it.list_price > 0
+        ? (paymentMethod === "efectivo" ? Math.round(it.list_price * 0.9) : Math.round(it.list_price))
+        : it.unit_price,
+    })));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentMethod]);
+
   const load = async () => {
     setLoading(true);
     const [{ data: s }, { data: p }] = await Promise.all([
@@ -73,14 +85,19 @@ export default function SalesManager() {
     setDiscount(0); setNotes(""); setItems([]); setSearch("");
   };
 
+  const applyMethodPrice = (listPrice: number, method: string) =>
+    method === "efectivo" ? Math.round(listPrice * 0.9) : Math.round(listPrice);
+
   const addProduct = (p: Product) => {
+    const list = Number(p.price);
     setItems((prev) => [
       ...prev,
       {
         product_id: p.id,
         product_name: p.name,
         quantity: 1,
-        unit_price: Number(p.price),
+        list_price: list,
+        unit_price: applyMethodPrice(list, paymentMethod),
         unit_cost: Number(p.cost || 0),
         size: null,
         color: null,
@@ -90,7 +107,7 @@ export default function SalesManager() {
   };
 
   const addManualItem = () => {
-    setItems((prev) => [...prev, { product_id: null, product_name: "", quantity: 1, unit_price: 0, unit_cost: 0, size: null, color: null }]);
+    setItems((prev) => [...prev, { product_id: null, product_name: "", quantity: 1, list_price: 0, unit_price: 0, unit_cost: 0, size: null, color: null }]);
   };
 
   const updateItem = (idx: number, patch: Partial<SaleItem>) => {
@@ -393,8 +410,14 @@ export default function SalesManager() {
               <div><Label>Notas</Label><Textarea value={notes} onChange={(e) => setNotes(e.target.value)} rows={2} /></div>
 
               <div className="bg-muted rounded-md p-3 space-y-1 text-sm">
+                {paymentMethod === "efectivo" && items.some((i) => i.list_price > i.unit_price) && (
+                  <div className="flex justify-between text-emerald-700 text-xs font-semibold pb-1 border-b border-border">
+                    <span>💵 10% efectivo aplicado</span>
+                    <span>-{formatPrice(items.reduce((s, i) => s + (i.list_price - i.unit_price) * i.quantity, 0))}</span>
+                  </div>
+                )}
                 <div className="flex justify-between"><span>Subtotal</span><span>{formatPrice(subtotal)}</span></div>
-                <div className="flex justify-between"><span>Descuento</span><span>-{formatPrice(discount)}</span></div>
+                <div className="flex justify-between"><span>Descuento extra</span><span>-{formatPrice(discount)}</span></div>
                 <div className="flex justify-between font-semibold border-t border-border pt-1"><span>Total</span><span>{formatPrice(total)}</span></div>
                 <div className="flex justify-between text-emerald-600"><span>Ganancia estimada</span><span>{formatPrice(profit)}</span></div>
               </div>
