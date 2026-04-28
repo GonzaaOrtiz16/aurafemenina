@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,6 +41,7 @@ interface Sale {
 
 export default function SalesManager() {
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [sales, setSales] = useState<Sale[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
@@ -143,6 +145,21 @@ export default function SalesManager() {
       return;
     }
 
+    // Validación: color y talle obligatorios cuando el producto los tiene
+    for (const it of items) {
+      if (!it.product_id) continue; // items manuales no requieren
+      const colors = getColorsForItem(it);
+      const sizes = getSizesForItem(it);
+      if (colors.length > 0 && !it.color) {
+        toast({ title: "Color requerido", description: `Elegí un color para "${it.product_name}"`, variant: "destructive" });
+        return;
+      }
+      if (sizes.length > 0 && !it.size) {
+        toast({ title: "Talle requerido", description: `Elegí un talle para "${it.product_name}"`, variant: "destructive" });
+        return;
+      }
+    }
+
     const { data: sale, error } = await supabase.from("sales").insert({
       customer_name: customerName || null,
       customer_phone: customerPhone || null,
@@ -217,6 +234,10 @@ export default function SalesManager() {
     } else {
       toast({ title: "Venta registrada", description: `Total: ${formatPrice(total)} · Ganancia: ${formatPrice(profit)}` });
     }
+
+    // Invalidar cache para que la página pública refresque stock
+    await queryClient.invalidateQueries({ queryKey: ["products"] });
+    await queryClient.invalidateQueries({ queryKey: ["product"] });
 
     setOpen(false);
     resetForm();
