@@ -241,6 +241,14 @@ export default function ProductDetail() {
                   <span className="text-lg text-muted-foreground line-through italic">{formatPrice(product.originalPrice)}</span>
                 )}
               </div>
+              <div className="mt-2 space-y-0.5">
+                <p className="text-base font-semibold text-emerald-600">
+                  {formatPrice(Math.round(product.price * 0.9))} <span className="font-normal">con Efectivo</span>
+                </p>
+                <p className="text-xs text-emerald-600/90">
+                  10% de descuento pagando con Efectivo
+                </p>
+              </div>
             </div>
 
             {/* Selectores (Color y Talle) */}
@@ -296,32 +304,41 @@ export default function ProductDetail() {
                 </div>
               )}
 
-              {/* Cantidad */}
-              {selectedSize && (
-                <div>
-                  <p className="text-[10px] uppercase tracking-[0.2em] font-bold mb-4">Cantidad:</p>
-                  <div className="flex items-center gap-0 border border-border w-fit">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="h-12 w-12 flex items-center justify-center hover:bg-secondary transition-colors"
-                    >
-                      <Minus className="w-4 h-4" />
-                    </button>
-                    <span className="h-12 w-14 flex items-center justify-center text-sm font-bold border-x border-border">
-                      {quantity}
-                    </span>
-                    <button
-                      onClick={() => {
-                        const maxStock = getStockForSize(selectedSize);
-                        setQuantity(Math.min(hasVariants ? maxStock : 10, quantity + 1));
-                      }}
-                      className="h-12 w-12 flex items-center justify-center hover:bg-secondary transition-colors"
-                    >
-                      <Plus className="w-4 h-4" />
-                    </button>
+              {/* Cantidad + urgencia */}
+              {selectedSize && (() => {
+                const stockSel = getStockForSize(selectedSize);
+                const showUrgency = hasVariants && stockSel > 0 && stockSel <= 5;
+                return (
+                  <div className="space-y-3">
+                    {showUrgency && (
+                      <div className="bg-rose-50 border border-rose-200 text-rose-700 px-3 py-2 text-xs font-bold uppercase tracking-wider rounded-sm animate-pulse">
+                        🔥 ¡No te lo pierdas! Solo quedan {stockSel} en talle {selectedSize}
+                      </div>
+                    )}
+                    <p className="text-[10px] uppercase tracking-[0.2em] font-bold">Cantidad:</p>
+                    <div className="flex items-center gap-0 border border-border w-fit">
+                      <button
+                        onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                        className="h-12 w-12 flex items-center justify-center hover:bg-secondary transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                      </button>
+                      <span className="h-12 w-14 flex items-center justify-center text-sm font-bold border-x border-border">
+                        {quantity}
+                      </span>
+                      <button
+                        onClick={() => {
+                          const maxStock = getStockForSize(selectedSize);
+                          setQuantity(Math.min(hasVariants ? maxStock : 10, quantity + 1));
+                        }}
+                        className="h-12 w-12 flex items-center justify-center hover:bg-secondary transition-colors"
+                      >
+                        <Plus className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
 
             <Button onClick={handleAddToCart} className="w-full bg-foreground text-background h-16 uppercase tracking-[0.2em] rounded-none hover:bg-foreground/90 transition-all text-[11px] font-bold shadow-xl">
