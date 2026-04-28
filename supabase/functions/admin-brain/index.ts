@@ -250,11 +250,14 @@ async function buildCommandPlan(snapshot: any, prompt: string) {
   "openTab": "products|encargues|hero|faqs|config|ai",
   "actions": [
     {
-      "type": "update_announcement|update_contact|update_hero|update_product_price|update_custom_product_price|set_product_featured|set_custom_product_featured|none",
+      "type": "update_announcement|update_contact|update_hero|update_product_price|update_custom_product_price|set_product_featured|set_custom_product_featured|bulk_adjust_prices|bulk_adjust_costs|none",
       "productId": "uuid opcional",
       "value": 0,
       "featured": true,
-      "patch": {}
+      "patch": {},
+      "scope": "stock|encargues|all",
+      "percent": 0,
+      "operation": "increase|decrease|set"
     }
   ]
 }
@@ -265,8 +268,10 @@ Reglas:
 - Para hero, patch puede incluir: tagline, title_line1, title_line2, subtitle, button_text.
 - Para announcement, patch puede incluir: text, enabled.
 - Para contact, patch puede incluir: whatsapp, instagram, instagram_url, email, location.
-- Para precios, usá el productId exacto de la lista.
-- Respondé en español argentino, tono ejecutivo y claro.`,
+- Para precios individuales, usá el productId exacto de la lista.
+- **IMPORTANTE — Cambios masivos de precio**: Si el usuario pide ajustar precios de TODOS los productos (ej: "subí 10% a todos", "bajá 15% a todo el catálogo"), usá UNA sola acción "bulk_adjust_prices" con: scope ("stock", "encargues" o "all"), percent (número positivo, ej 10), operation ("increase" o "decrease"). NO generes una acción por producto.
+- Para ajustes masivos de costo, usá "bulk_adjust_costs" con la misma estructura.
+- Respondé en español argentino, tono ejecutivo y claro. Confirmá cuántos productos se afectaron.`,
     },
     {
       role: "user",
@@ -335,6 +340,39 @@ async function executeActions(adminClient: any, userId: string, prompt: string, 
           await adminClient.from("custom_products").update({ featured: action.featured }).eq("id", action.productId);
           executedActions.push(action.featured ? "Encargue marcado como destacado" : "Encargue quitado de destacados");
         }
+        break;
+      }
+      case "bulk_adjust_prices":
+      case "bulk_adjust_costs": {
+        const percent = Number(action.percent);
+        if (!isFinite(percent) || percent <= 0) break;
+        const op = action.operation === "decrease" ? "decrease" : "increase";
+        const factor = op === "increase" ? 1 + percent / 100 : 1 - percent / 100;
+        const scope = action.scope === "encargues" ? "encargues" : action.scope === "all" ? "all" : "stock";
+        const isCost = action.type === "bulk_adjust_costs";
+
+        const targets: Array<{ table: string; priceField: string }> = [];
+        if (scope === "stock" || scope === "all") {
+          targets.push({ table: "products", priceField: isCost ? "cost" : "price" });
+        }
+        if (scope === "encargues" || scope === "all") {
+          targets.push({ table: "custom_products", priceField: isCost ? "cost" : "price_estimate" });
+        }
+
+        let totalUpdated = 0;
+        for (const t of targets) {
+          const { data: rows } = await adminClient.from(t.table).select(`id, ${t.priceField}`);
+          for (const row of rows || []) {
+            const current = Number((row as any)[t.priceField]);
+            if (!isFinite(current) || current <= 0) continue;
+            const next = Math.round(current * factor);
+            await adminClient.from(t.table).update({ [t.priceField]: next }).eq("id", (row as any).id);
+            totalUpdated += 1;
+          }
+        }
+        executedActions.push(
+          `${isCost ? "Costos" : "Precios"} ${op === "increase" ? "aumentados" : "reducidos"} ${percent}% en ${totalUpdated} producto(s) (${scope})`,
+        );
         break;
       }
     }
