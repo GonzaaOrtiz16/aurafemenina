@@ -24,7 +24,8 @@ interface SaleItem {
   product_id: string | null;
   product_name: string;
   quantity: number;
-  unit_price: number;
+  list_price: number;   // precio de lista (siempre)
+  unit_price: number;   // precio aplicado (con o sin 10% efectivo)
   unit_cost: number;
   size: string | null;
   color: string | null;
@@ -73,14 +74,19 @@ export default function SalesManager() {
     setDiscount(0); setNotes(""); setItems([]); setSearch("");
   };
 
+  const applyMethodPrice = (listPrice: number, method: string) =>
+    method === "efectivo" ? Math.round(listPrice * 0.9) : Math.round(listPrice);
+
   const addProduct = (p: Product) => {
+    const list = Number(p.price);
     setItems((prev) => [
       ...prev,
       {
         product_id: p.id,
         product_name: p.name,
         quantity: 1,
-        unit_price: Number(p.price),
+        list_price: list,
+        unit_price: applyMethodPrice(list, paymentMethod),
         unit_cost: Number(p.cost || 0),
         size: null,
         color: null,
@@ -90,7 +96,7 @@ export default function SalesManager() {
   };
 
   const addManualItem = () => {
-    setItems((prev) => [...prev, { product_id: null, product_name: "", quantity: 1, unit_price: 0, unit_cost: 0, size: null, color: null }]);
+    setItems((prev) => [...prev, { product_id: null, product_name: "", quantity: 1, list_price: 0, unit_price: 0, unit_cost: 0, size: null, color: null }]);
   };
 
   const updateItem = (idx: number, patch: Partial<SaleItem>) => {
