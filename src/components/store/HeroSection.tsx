@@ -70,8 +70,8 @@ export default function HeroSection() {
           alt="Modelo Aura Femenina"
           className={`w-full h-full object-cover transition-transform duration-[2000ms] ease-out will-change-transform ${imgReady && loaded ? "scale-100" : "scale-105"}`}
           style={{ objectPosition: h.image_position || "center center" }}
-          fetchPriority="high"
-          decoding="sync"
+          {...({ fetchpriority: "high" } as any)}
+          decoding="async"
           onLoad={() => setImgReady(true)}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
