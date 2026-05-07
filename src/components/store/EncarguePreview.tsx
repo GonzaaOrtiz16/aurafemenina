@@ -8,7 +8,7 @@ function EncarguePreview() {
   const { ref, isVisible } = useScrollAnimation(0.15);
 
   return (
-    <section className="bg-secondary/30 py-20 md:py-32 overflow-hidden content-visibility-auto">
+    <section className="bg-secondary/30 py-20 md:py-32 overflow-hidden">
       <div
         ref={ref}
         className={`container px-6 md:px-12 flex flex-col md:flex-row items-center gap-12 md:gap-20 transition-[opacity,transform] duration-1000 will-change-[opacity,transform] ${

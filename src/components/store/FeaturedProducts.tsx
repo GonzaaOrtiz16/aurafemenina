@@ -10,7 +10,7 @@ function FeaturedProducts() {
   const { ref: titleRef, isVisible: titleVisible } = useScrollAnimation(0.2);
 
   return (
-    <section className="container py-20 md:py-32 px-6 md:px-12 content-visibility-auto">
+    <section className="container py-20 md:py-32 px-6 md:px-12">
       <div
         ref={titleRef}
         className={`text-center transition-[opacity,transform] duration-700 will-change-[opacity,transform] ${
