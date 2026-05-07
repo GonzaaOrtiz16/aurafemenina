@@ -10,7 +10,6 @@ interface ProductCardProps {
 
 function ProductCard({ product }: ProductCardProps) {
   const [imgLoaded, setImgLoaded] = useState(false);
-  const [hovered, setHovered] = useState(false);
   const onLoad = useCallback(() => setImgLoaded(true), []);
 
   return (
@@ -20,24 +19,23 @@ function ProductCard({ product }: ProductCardProps) {
         className="group block"
         data-track-key={`producto:${product.name}`}
         data-product-id={product.id}
-        onMouseEnter={() => setHovered(true)}
       >
         <div className="relative aspect-[3/4] overflow-hidden bg-secondary rounded-sm">
           <img
             src={product.images[0]}
             alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform group-hover:scale-[1.03]"
+            className="h-full w-full object-cover transition-opacity duration-300 ease-out group-hover:opacity-0"
             loading="lazy"
             decoding="async"
             onLoad={onLoad}
           />
-          {/* Only mount hover image after first hover to save bandwidth */}
-          {hovered && product.images[1] && (
+          {product.images[1] && (
             <img
               src={product.images[1]}
               alt=""
-              className="absolute inset-0 h-full w-full object-cover opacity-0 group-hover:opacity-100 transition-opacity duration-700 ease-out"
-              loading="eager"
+              aria-hidden="true"
+              className="absolute inset-0 h-full w-full object-cover opacity-0 transition-opacity duration-300 ease-out group-hover:opacity-100"
+              loading="lazy"
               decoding="async"
             />
           )}
