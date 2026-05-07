@@ -241,14 +241,16 @@ export default function ProductDetail() {
                   <span className="text-lg text-muted-foreground line-through italic">{formatPrice(product.originalPrice)}</span>
                 )}
               </div>
-              <div className="mt-2 space-y-0.5">
-                <p className="text-base font-semibold text-emerald-600">
-                  {formatPrice(Math.round(product.price * 0.9))} <span className="font-normal">con Efectivo</span>
-                </p>
-                <p className="text-xs text-emerald-600/90">
-                  10% de descuento pagando con Efectivo
-                </p>
-              </div>
+              {!product.originalPrice && (
+                <div className="mt-2 space-y-0.5">
+                  <p className="text-base font-semibold text-emerald-600">
+                    {formatPrice(Math.round(product.price * 0.9))} <span className="font-normal">con Efectivo</span>
+                  </p>
+                  <p className="text-xs text-emerald-600/90">
+                    10% de descuento pagando con Efectivo
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Selectores (Color y Talle) */}
