@@ -1,73 +1,57 @@
-# Welcome to your Lovable project
+# Aura Femenina - AI-Driven E-Commerce Platform 🛍️🤖✨
 
-## Project info
+Ecosistema de comercio electrónico de última generación diseñado para la marca de indumentaria **Aura Femenina** (`aurafemenina.com.ar`). Esta plataforma no solo gestiona el catálogo y las ventas tradicionales, sino que integra modelos de Inteligencia Artificial tanto en la experiencia de la usuaria final como en la toma de decisiones del panel de administración.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+---
 
-## How can I edit this code?
+## 🧠 Módulos de Inteligencia Artificial
 
-There are several ways of editing your application.
+El núcleo diferenciador de este proyecto es su arquitectura dividida en dos cerebros cognitivos:
 
-**Use Lovable**
+### 1. Asistente Virtual IA (Customer-Facing)
+Un agente inteligente integrado en el frontend diseñado para guiar a las clientas en su proceso de compra de manera personalizada.
+- **Asesoramiento de Estilo Activo:** Recomienda prendas, combina outfits y sugiere productos según las preferencias de navegación de la usuaria.
+- **Sincronización Cognitiva de Catálogo:** Conoce al instante el stock, disponibilidad de talles y precios reales en tiempo real (por ejemplo, el valor exacto del *Conjunto NY*).
+- **Reducción de Fricción:** Resuelve dudas frecuentes en el checkout y prepara el pedido de forma inteligente antes de derivar la compra final a WhatsApp.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+### 2. Cerebro IA en Panel de Control (Admin-Facing)
+Un motor de IA especializado integrado en el backend administrativo para optimizar la gestión operativa del negocio.
+- **Análisis Predictivo:** Evalúa tendencias de venta y consultas de las usuarias para sugerir stock inteligente o alertar sobre productos de alta demanda.
+- **Automatización de Catálogo:** Capacidad de interpretar descripciones y optimizar la carga de nuevos ingresos de indumentaria.
+- **Asistente Operativo de Negocio:** Permite al administrador interactuar mediante lenguaje natural para consultar métricas complejas, rendimiento de la base de datos o estados de órdenes sin necesidad de escribir consultas SQL manuales.
 
-Changes made via Lovable will be committed automatically to this repo.
+---
 
-**Use your preferred IDE**
+## ✨ Características Generales de la Plataforma
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+- **Autenticación Omnicanal:** Inicio de sesión unificado con Google Auth nativo y Email/Contraseña gestionado por capas criptográficas.
+- **Flujo de Checkout Fluido:** Carrito dinámico que procesa la orden, calcula costos y genera un formato de orden limpio para confirmación inmediata.
+- **Base de Datos Relacional Automatizada:** Arquitectura en Supabase con *Triggers* y *Database Functions* automatizados que crean perfiles de clientes estructurados en la tabla `profiles` inmediatamente tras el registro.
+- **Infraestructura Edge y DNS:** Enrutamiento perimetral optimizado y protección contra amenazas mediante proxy inverso en **Cloudflare**, garantizando un tiempo de respuesta ultra bajo en producción.
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+---
 
-Follow these steps:
+## 🛠️ Stack Tecnológico
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+- **Frontend:** React + TypeScript (Clean Architecture & Type Safety).
+- **Build Tool:** Vite (HMR ultra rápido para desarrollo fluido).
+- **UI/UX:** Tailwind CSS + shadcn/ui (Diseño responsivo, estético, minimalista y accesible).
+- **Backend as a Service (BaaS):** Supabase (PostgreSQL relacional, Auth Engine y Storage).
+- **IA Integration:** Modelos integrados y orquestados mediante el entorno de desarrollo automatizado de Lovable.
+- **Red & Infraestructura:** Cloudflare (DNS de alta velocidad, SSL avanzado y Proxying de producción).
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+---
 
-# Step 3: Install the necessary dependencies.
-npm i
+## 🚀 Arquitectura y Desarrollo Local
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Si necesitás clonar el repositorio para auditar código, realizar deploys locales o inyectar nuevas integraciones en el pipeline:
 
-**Edit a file directly in GitHub**
+### Requisitos Previos
+- Node.js (versión LTS recomendada)
+- npm o pnpm
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### Pasos de Instalación:
 
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+1. **Clonar el repositorio:**
+   ```sh
+   git clone [https://github.com/GonzaaOrtiz16/aurafemenina.git](https://github.com/GonzaaOrtiz16/aurafemenina.git)
