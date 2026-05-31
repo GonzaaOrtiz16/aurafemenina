@@ -1,5 +1,5 @@
 import Layout from "@/components/store/Layout";
-import { Instagram, Mail, MapPin, Phone, MessageCircle } from "lucide-react";
+import { Instagram, Mail, MapPin, MessageCircle } from "lucide-react";
 import { useSiteSetting } from "@/hooks/useSiteSettings";
 import { Skeleton } from "@/components/ui/skeleton";
 

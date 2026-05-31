@@ -24,7 +24,7 @@ export default function HeroSection() {
   // Cache hero data in sessionStorage to avoid ghost flash on revisits
   useEffect(() => {
     if (hero) {
-      try { sessionStorage.setItem(HERO_CACHE_KEY, JSON.stringify(hero)); } catch {}
+      try { sessionStorage.setItem(HERO_CACHE_KEY, JSON.stringify(hero)); } catch { /* sessionStorage no disponible */ }
     }
   }, [hero]);
 

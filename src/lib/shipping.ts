@@ -98,8 +98,7 @@ export function generarMensajeWhatsApp(
 
   let mensaje = `*NUEVO PEDIDO - AURA FEMENINA*%0A%0A`;
   mensaje += `*Cliente:* ${datos.nombre}%0A`;
-  mensaje += `*Dirección:* ${datos.direccion} (CP: ${datos.cp})%0A`;
-  mensaje += `*Email:* orianaevelyn09@gmail.com%0A%0A`;
+  mensaje += `*Dirección:* ${datos.direccion} (CP: ${datos.cp})%0A%0A`;
 
   mensaje += `*PRODUCTOS:*%0A`;
   items.forEach((item) => {

@@ -1,19 +1,73 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { corsHeaders, isAllowedOrigin } from "../_shared/cors.ts";
+import { rateLimit, clientIp } from "../_shared/rateLimit.ts";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
+
+// Acciones que solo puede ejecutar un admin autenticado (herramientas del panel).
+const ADMIN_ACTIONS = new Set(["generate-description", "generate-seo"]);
+
+async function isAdminRequest(req: Request): Promise<boolean> {
+  const authHeader = req.headers.get("Authorization");
+  if (!authHeader) return false;
+
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+  const anonKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+  const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+  const authClient = createClient(supabaseUrl, anonKey, {
+    global: { headers: { Authorization: authHeader } },
+  });
+  const { data: { user }, error } = await authClient.auth.getUser();
+  if (error || !user) return false;
+
+  const adminClient = createClient(supabaseUrl, serviceRoleKey);
+  const { data: roleRow } = await adminClient
+    .from("user_roles")
+    .select("id")
+    .eq("user_id", user.id)
+    .eq("role", "admin")
+    .maybeSingle();
+
+  return !!roleRow;
+}
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const cors = corsHeaders(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  if (!isAllowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: "Origen no permitido" }), {
+      status: 403,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
+  // Rate limit por IP para frenar el abuso de créditos de IA.
+  const rl = rateLimit(clientIp(req), 20, 60_000);
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({ error: "Demasiadas consultas, esperá un momento e intentá de nuevo." }),
+      {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(rl.retryAfter) },
+      },
+    );
+  }
 
   try {
     const { action, payload } = await req.json();
     const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
     if (!LOVABLE_API_KEY) throw new Error("LOVABLE_API_KEY not configured");
+
+    // Las herramientas del panel exigen sesión de admin.
+    if (ADMIN_ACTIONS.has(action) && !(await isAdminRequest(req))) {
+      return new Response(JSON.stringify({ error: "Requiere permisos de admin" }), {
+        status: 403,
+        headers: { ...cors, "Content-Type": "application/json" },
+      });
+    }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
@@ -126,7 +180,7 @@ REGLAS DE HIERRO:
 
       const messages = payload.messages || [];
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(AI_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -143,27 +197,27 @@ REGLAS DE HIERRO:
         const status = response.status;
         if (status === 429) {
           return new Response(JSON.stringify({ error: "Demasiadas consultas, intentá de nuevo en unos segundos." }), {
-            status: 429, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 429, headers: { ...cors, "Content-Type": "application/json" },
           });
         }
         if (status === 402) {
           return new Response(JSON.stringify({ error: "Servicio temporalmente no disponible." }), {
-            status: 402, headers: { ...corsHeaders, "Content-Type": "application/json" },
+            status: 402, headers: { ...cors, "Content-Type": "application/json" },
           });
         }
         throw new Error(`AI gateway error: ${status}`);
       }
 
       return new Response(response.body, {
-        headers: { ...corsHeaders, "Content-Type": "text/event-stream" },
+        headers: { ...cors, "Content-Type": "text/event-stream" },
       });
     }
 
-    // ── ACTION: generate-description ──
+    // ── ACTION: generate-description (admin) ──
     if (action === "generate-description") {
       const { productName, category } = payload;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(AI_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -174,7 +228,7 @@ REGLAS DE HIERRO:
           messages: [
             {
               role: "system",
-              content: `Sos una redactora de moda de alta gama argentina. Escribís descripciones elegantes, persuasivas y concisas para una tienda de ropa femenina llamada "Aura Femenina". 
+              content: `Sos una redactora de moda de alta gama argentina. Escribís descripciones elegantes, persuasivas y concisas para una tienda de ropa femenina llamada "Aura Femenina".
 Usá español argentino. Máximo 2-3 oraciones. Enfocate en cómo la prenda hace sentir a quien la usa. Sé poética pero concreta. No uses hashtags.`,
             },
             {
@@ -190,7 +244,7 @@ Usá español argentino. Máximo 2-3 oraciones. Enfocate en cómo la prenda hace
       const description = data.choices?.[0]?.message?.content || "";
 
       return new Response(JSON.stringify({ description }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -211,7 +265,7 @@ Usá español argentino. Máximo 2-3 oraciones. Enfocate en cómo la prenda hace
         })
         .join("\n");
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(AI_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -222,7 +276,7 @@ Usá español argentino. Máximo 2-3 oraciones. Enfocate en cómo la prenda hace
           messages: [
             {
               role: "system",
-              content: `Sos un motor de búsqueda inteligente para una tienda de ropa femenina. 
+              content: `Sos un motor de búsqueda inteligente para una tienda de ropa femenina.
 Dada una consulta del usuario, analizá la intención y devolvé los IDs de los productos más relevantes del catálogo.
 CATÁLOGO:
 ${productList}
@@ -241,15 +295,15 @@ Respondé SOLO con un JSON array de IDs ordenados por relevancia: ["id1", "id2",
       const ids = match ? JSON.parse(match[0]) : [];
 
       return new Response(JSON.stringify({ ids }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
-    // ── ACTION: generate-seo ──
+    // ── ACTION: generate-seo (admin) ──
     if (action === "generate-seo") {
       const { productName, description, category } = payload;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(AI_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -278,7 +332,7 @@ Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}`,
       const seo = match ? JSON.parse(match[0]) : {};
 
       return new Response(JSON.stringify(seo), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -286,7 +340,7 @@ Respondé SOLO con JSON: {"metaTitle": "...", "metaDescription": "..."}`,
     if (action === "complete-look") {
       const { productName, productCategory, productSubcategory, catalog } = payload;
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(AI_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -337,7 +391,7 @@ Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
       const ids = match ? JSON.parse(match[0]) : [];
 
       return new Response(JSON.stringify({ ids }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -353,7 +407,7 @@ Respondé SOLO con un JSON array de IDs: ["id1", "id2"]`,
         .map((p: any) => `ID:${p.id} | ${p.name} | Cat:${p.categories?.name || ""}`)
         .join("\n");
 
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      const response = await fetch(AI_URL, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${LOVABLE_API_KEY}`,
@@ -387,18 +441,18 @@ Respondé SOLO con un JSON array de IDs: ["id1", "id2", ...]`,
       const ids = match ? JSON.parse(match[0]) : [];
 
       return new Response(JSON.stringify({ ids }), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
     return new Response(JSON.stringify({ error: "Unknown action" }), {
-      status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 400, headers: { ...cors, "Content-Type": "application/json" },
     });
   } catch (e) {
     console.error("gemini-processor error:", e);
     return new Response(
       JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } }
     );
   }
 });

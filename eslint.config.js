@@ -5,7 +5,8 @@ import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
 
 export default tseslint.config(
-  { ignores: ["dist"] },
+  // Las Edge Functions corren en Deno (otro runtime/globals), no las lintea la config de React.
+  { ignores: ["dist", "supabase/functions"] },
   {
     extends: [js.configs.recommended, ...tseslint.configs.recommended],
     files: ["**/*.{ts,tsx}"],
@@ -21,6 +22,9 @@ export default tseslint.config(
       ...reactHooks.configs.recommended.rules,
       "react-refresh/only-export-components": ["warn", { allowConstantExport: true }],
       "@typescript-eslint/no-unused-vars": "off",
+      // El código base usa `any` ampliamente (generado por Lovable). Lo dejamos como
+      // advertencia para no romper el lint, pero señalado para reducir con el tiempo.
+      "@typescript-eslint/no-explicit-any": "warn",
     },
   },
 );

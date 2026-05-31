@@ -10,7 +10,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 
-const GEMINI_URL = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/gemini-processor`;
 
 interface ColorVariant {
   nombre: string;
@@ -138,13 +137,11 @@ export default function AdminEncargues() {
     try {
       const catName = categories.find(c => c.id === form.category_id)?.name || "";
       const subName = subcategories.find(s => s.id === form.subcategory_id)?.name || "";
-      const resp = await fetch(GEMINI_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Authorization: `Bearer ${import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY}` },
-        body: JSON.stringify({ action: "generate-description", payload: { productName: form.name, category: catName, subcategory: subName } }),
+      const { data, error } = await supabase.functions.invoke("gemini-processor", {
+        body: { action: "generate-description", payload: { productName: form.name, category: catName, subcategory: subName } },
       });
-      const data = await resp.json();
-      if (data.description) { setForm(prev => ({ ...prev, description: data.description })); toast({ title: "Descripción generada ✨" }); }
+      if (error) throw error;
+      if (data?.description) { setForm(prev => ({ ...prev, description: data.description })); toast({ title: "Descripción generada ✨" }); }
     } catch { toast({ title: "Error generando descripción", variant: "destructive" }); }
     setGeneratingDesc(false);
   };

@@ -8,7 +8,7 @@ export const uploadProductImage = async (file: File) => {
     const filePath = fileName; 
 
     // Subimos el archivo al bucket
-    const { error: uploadError, data } = await supabase.storage
+    const { error: uploadError } = await supabase.storage
       .from('product-images') // Debe coincidir con el nombre en tu captura
       .upload(filePath, file);
 

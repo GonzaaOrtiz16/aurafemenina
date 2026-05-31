@@ -54,4 +54,35 @@ Si necesitás clonar el repositorio para auditar código, realizar deploys local
 
 1. **Clonar el repositorio:**
    ```sh
-   git clone [https://github.com/GonzaaOrtiz16/aurafemenina.git](https://github.com/GonzaaOrtiz16/aurafemenina.git)
+   git clone https://github.com/GonzaaOrtiz16/aurafemenina.git
+   cd aurafemenina
+   ```
+
+2. **Instalar dependencias:**
+   ```sh
+   npm install
+   ```
+
+3. **Configurar variables de entorno:**
+   ```sh
+   cp .env.example .env
+   ```
+   Completá `.env` con los valores de tu proyecto Supabase (ver `.env.example`).
+   Los secretos de backend (`LOVABLE_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY`) se
+   configuran en **Supabase → Edge Functions → Secrets**, nunca en el frontend.
+
+4. **Levantar el entorno de desarrollo:**
+   ```sh
+   npm run dev
+   ```
+   La app queda disponible en `http://localhost:8080`.
+
+### Scripts disponibles
+
+| Script | Descripción |
+| --- | --- |
+| `npm run dev` | Servidor de desarrollo con HMR. |
+| `npm run build` | Build de producción. |
+| `npm run preview` | Sirve el build de producción localmente. |
+| `npm run lint` | Linting con ESLint. |
+| `npm run test` | Corre los tests con Vitest. |

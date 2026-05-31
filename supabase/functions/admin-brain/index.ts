@@ -1,10 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
-};
+import { corsHeaders, isAllowedOrigin } from "../_shared/cors.ts";
+import { rateLimit, clientIp } from "../_shared/rateLimit.ts";
 
 const AI_URL = "https://ai.gateway.lovable.dev/v1/chat/completions";
 const ALLOWED_TABS = new Set(["products", "encargues", "hero", "faqs", "config", "ai"]);
@@ -43,8 +40,9 @@ async function getAdminClient(req: Request) {
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
   const authHeader = req.headers.get("Authorization");
 
+  const cors = corsHeaders(req);
   if (!authHeader) {
-    return { error: new Response(JSON.stringify({ error: "Falta autenticación" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }) };
+    return { error: new Response(JSON.stringify({ error: "Falta autenticación" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } }) };
   }
 
   const authClient = createClient(supabaseUrl, anonKey, {
@@ -57,7 +55,7 @@ async function getAdminClient(req: Request) {
   } = await authClient.auth.getUser();
 
   if (userError || !user) {
-    return { error: new Response(JSON.stringify({ error: "Sesión inválida" }), { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }) };
+    return { error: new Response(JSON.stringify({ error: "Sesión inválida" }), { status: 401, headers: { ...cors, "Content-Type": "application/json" } }) };
   }
 
   const adminClient = createClient(supabaseUrl, serviceRoleKey);
@@ -69,7 +67,7 @@ async function getAdminClient(req: Request) {
     .maybeSingle();
 
   if (!roleRow) {
-    return { error: new Response(JSON.stringify({ error: "No tenés permisos de admin" }), { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } }) };
+    return { error: new Response(JSON.stringify({ error: "No tenés permisos de admin" }), { status: 403, headers: { ...cors, "Content-Type": "application/json" } }) };
   }
 
   return { adminClient, user };
@@ -390,7 +388,26 @@ async function executeActions(adminClient: any, userId: string, prompt: string, 
 }
 
 serve(async (req) => {
-  if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
+  const cors = corsHeaders(req);
+  if (req.method === "OPTIONS") return new Response(null, { headers: cors });
+
+  if (!isAllowedOrigin(req)) {
+    return new Response(JSON.stringify({ error: "Origen no permitido" }), {
+      status: 403,
+      headers: { ...cors, "Content-Type": "application/json" },
+    });
+  }
+
+  const rl = rateLimit(clientIp(req), 30, 60_000);
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({ error: "Demasiadas consultas al cerebro admin, esperá un momento." }),
+      {
+        status: 429,
+        headers: { ...cors, "Content-Type": "application/json", "Retry-After": String(rl.retryAfter) },
+      },
+    );
+  }
 
   try {
     const adminSetup = await getAdminClient(req);
@@ -404,7 +421,7 @@ serve(async (req) => {
     if (mode === "analyze") {
       const analysis = await buildAnalyzeResponse(snapshot);
       return new Response(JSON.stringify(analysis), {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -412,7 +429,7 @@ serve(async (req) => {
     if (!prompt) {
       return new Response(JSON.stringify({ error: "Falta el prompt" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { ...cors, "Content-Type": "application/json" },
       });
     }
 
@@ -425,13 +442,13 @@ serve(async (req) => {
         openTab: sanitizeTab(plan.openTab),
         executedActions,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { headers: { ...cors, "Content-Type": "application/json" } },
     );
   } catch (error) {
     console.error("admin-brain error:", error);
     return new Response(
       JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { status: 500, headers: { ...cors, "Content-Type": "application/json" } },
     );
   }
 });
